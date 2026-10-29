@@ -1,0 +1,3748 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Quiz Zone</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Firebase SDKs for Realtime Multi-Device Sync -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
+  <style>
+    /* =========================================================
+       CSS RESET & DESIGN SYSTEM
+       ========================================================= */
+    :root {
+      --bg-gradient: linear-gradient(135deg, #2b0854 0%, #46178f 45%, #1d0742 100%);
+      --card-bg: rgba(255, 255, 255, 0.12);
+      --card-border: rgba(255, 255, 255, 0.22);
+      --card-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+      
+      /* Kahoot signature colors */
+      --color-red: #e21b3c;
+      --color-red-hover: #ff2b4c;
+      --color-red-shadow: #9b0c23;
+      
+      --color-blue: #1368ce;
+      --color-blue-hover: #267eff;
+      --color-blue-shadow: #0a3d7d;
+      
+      --color-yellow: #d89e00;
+      --color-yellow-hover: #f5b400;
+      --color-yellow-shadow: #876200;
+      
+      --color-green: #26890c;
+      --color-green-hover: #32ab12;
+      --color-green-shadow: #145005;
+
+      --color-gold: #ffd700;
+      --color-silver: #c0c0c0;
+      --color-bronze: #cd7f32;
+
+      --text-white: #ffffff;
+      --text-muted: rgba(255, 255, 255, 0.75);
+      --text-dim: rgba(255, 255, 255, 0.55);
+
+      --radius-sm: 10px;
+      --radius-md: 16px;
+      --radius-lg: 24px;
+      --radius-full: 9999px;
+
+      --font-main: 'Outfit', 'Fredoka', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-main);
+      background: var(--bg-gradient);
+      min-height: 100vh;
+      color: var(--text-white);
+      overflow-x: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+    }
+
+    /* Animated background ambient bubbles */
+    .bg-effects {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 0;
+      overflow: hidden;
+    }
+    .ambient-glow {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(90px);
+      opacity: 0.35;
+      animation: floatAmbient 18s ease-in-out infinite alternate;
+    }
+    .glow-1 {
+      width: 450px;
+      height: 450px;
+      background: #7a1ee6;
+      top: -100px;
+      left: -100px;
+    }
+    .glow-2 {
+      width: 400px;
+      height: 400px;
+      background: #e21b3c;
+      bottom: -100px;
+      right: -80px;
+      animation-delay: -6s;
+    }
+    .glow-3 {
+      width: 320px;
+      height: 320px;
+      background: #1368ce;
+      top: 40%;
+      right: 15%;
+      animation-delay: -12s;
+    }
+    @keyframes floatAmbient {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(40px, 30px) scale(1.1); }
+      100% { transform: translate(-30px, 60px) scale(0.95); }
+    }
+
+    /* TOP GLOBAL NAVBAR */
+    .app-header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 24px;
+      background: rgba(30, 8, 62, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    }
+
+    .brand-logo-small {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      cursor: pointer;
+      user-select: none;
+      text-decoration: none;
+    }
+    .brand-logo-small .logo-badge {
+      font-size: 1.4rem;
+      filter: drop-shadow(0 2px 8px rgba(255, 215, 0, 0.6));
+      animation: pulseLogo 2.5s infinite;
+    }
+    .brand-logo-small .logo-text {
+      font-size: 1.35rem;
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #ffdd55, #ff7e5f, #feb47b);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-shadow: 0 2px 14px rgba(255, 126, 95, 0.4);
+    }
+    @keyframes pulseLogo {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15) rotate(5deg); }
+    }
+
+    .header-controls {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    /* Language Switcher Button */
+    .lang-toggle-btn {
+      display: inline-flex;
+      align-items: center;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: var(--radius-full);
+      padding: 4px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+    .lang-toggle-btn:hover {
+      background: rgba(255, 255, 255, 0.25);
+      border-color: rgba(255, 255, 255, 0.5);
+      transform: translateY(-1px);
+    }
+    .lang-opt {
+      padding: 5px 12px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      border-radius: var(--radius-full);
+      transition: all 0.2s ease;
+      color: var(--text-muted);
+    }
+    .lang-opt.active {
+      background: #ffd700;
+      color: #2b0854;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+    }
+
+    /* Sound Switcher */
+    .sound-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+      transition: all 0.2s ease;
+    }
+    .sound-btn:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: scale(1.08);
+    }
+
+    /* Database Settings Button in Header */
+    .db-status-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      color: white;
+      height: 36px;
+      padding: 0 12px;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      font-size: 0.85rem;
+      font-weight: 700;
+      font-family: var(--font-main);
+      transition: all 0.2s ease;
+    }
+    .db-status-btn:hover {
+      background: rgba(255, 255, 255, 0.28);
+      transform: scale(1.04);
+    }
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #ef4444; /* red default */
+      box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+      transition: background 0.3s ease, box-shadow 0.3s ease;
+    }
+    .status-dot.connected {
+      background: #10b981;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.8);
+    }
+    .status-dot.connecting {
+      background: #f59e0b;
+      box-shadow: 0 0 8px rgba(245, 158, 11, 0.8);
+    }
+
+    /* Modal Dialog */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(10, 2, 25, 0.78);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-overlay.open {
+      display: flex;
+      animation: modalFadeIn 0.25s ease;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: scale(0.96); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .modal-box {
+      background: linear-gradient(135deg, rgba(43, 8, 84, 0.98), rgba(70, 23, 143, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      max-width: 580px;
+      width: 100%;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      text-align: left;
+      position: relative;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+    .modal-title {
+      font-size: 1.35rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .modal-close-btn {
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 1.6rem;
+      cursor: pointer;
+      line-height: 1;
+      padding: 4px;
+    }
+    .modal-close-btn:hover {
+      color: white;
+    }
+    .modal-desc {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+      line-height: 1.45;
+    }
+    .config-textarea {
+      width: 100%;
+      height: 130px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-sm);
+      color: #fff;
+      font-family: monospace;
+      font-size: 0.85rem;
+      padding: 12px;
+      resize: vertical;
+      margin-bottom: 14px;
+      outline: none;
+    }
+    .config-textarea:focus {
+      border-color: #ffd700;
+    }
+    .steps-list {
+      background: rgba(0, 0, 0, 0.22);
+      border-radius: var(--radius-sm);
+      padding: 14px 18px;
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 18px;
+      line-height: 1.5;
+    }
+    .steps-list ol {
+      margin-left: 18px;
+      margin-top: 6px;
+    }
+    .steps-list a {
+      color: #ffd700;
+      text-decoration: underline;
+    }
+
+    /* MAIN APP CONTAINER */
+    #app {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px 16px 40px;
+      max-width: 1100px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    /* Screen Transition Base */
+    .screen {
+      display: none;
+      width: 100%;
+      max-width: 860px;
+      animation: fadeInScreen 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
+    .screen.active {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    @keyframes fadeInScreen {
+      from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.985);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    /* COMMON GLASS CARD */
+    .glass-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-radius: var(--radius-lg);
+      padding: 32px 28px;
+      width: 100%;
+      text-align: center;
+    }
+
+    /* BUTTONS */
+    .btn {
+      font-family: var(--font-main);
+      font-weight: 800;
+      border: none;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      user-select: none;
+      text-decoration: none;
+      font-size: 1.05rem;
+      padding: 14px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn:active {
+      transform: translateY(3px) scale(0.98) !important;
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: none !important;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #ff8c00, #ff007f);
+      color: white;
+      box-shadow: 0 6px 20px rgba(255, 0, 127, 0.4), 0 3px 0 #b30059;
+    }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(255, 0, 127, 0.5), 0 4px 0 #b30059;
+    }
+
+    .btn-success {
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4), 0 3px 0 #047857;
+    }
+    .btn-success:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(16, 185, 129, 0.55), 0 4px 0 #047857;
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.18);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    }
+    .btn-secondary:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.28);
+      transform: translateY(-2px);
+    }
+
+    /* ---------------------------------------------------------
+       SCREEN: HOME
+       --------------------------------------------------------- */
+    .home-hero {
+      margin-bottom: 30px;
+    }
+    .home-title {
+      font-size: clamp(3rem, 7vw, 4.8rem);
+      font-weight: 900;
+      letter-spacing: -1.5px;
+      line-height: 1.1;
+      margin-bottom: 12px;
+      background: linear-gradient(90deg, #ffd700 0%, #ff6b6b 50%, #4facfe 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 6px 24px rgba(255, 107, 107, 0.45));
+    }
+    .home-subtitle {
+      font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+      color: var(--text-muted);
+      font-weight: 500;
+      max-width: 550px;
+      margin: 0 auto;
+    }
+
+    .role-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      width: 100%;
+      margin-bottom: 30px;
+    }
+
+    .role-card {
+      background: rgba(255, 255, 255, 0.1);
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-lg);
+      padding: 32px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      position: relative;
+      cursor: pointer;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+    .role-card:hover {
+      transform: translateY(-6px);
+      border-color: rgba(255, 255, 255, 0.5);
+      background: rgba(255, 255, 255, 0.16);
+      box-shadow: 0 18px 40px rgba(0, 0, 0, 0.4);
+    }
+    .role-icon {
+      font-size: 4rem;
+      margin-bottom: 16px;
+      filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.3));
+    }
+    .role-title {
+      font-size: 1.45rem;
+      font-weight: 800;
+      margin-bottom: 10px;
+    }
+    .role-desc {
+      font-size: 0.95rem;
+      color: var(--text-muted);
+      margin-bottom: 24px;
+      line-height: 1.45;
+      flex: 1;
+    }
+    .role-card .btn {
+      width: 100%;
+    }
+
+    /* How to Play Guide */
+    .guide-box {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px dashed rgba(255, 255, 255, 0.25);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      width: 100%;
+      text-align: left;
+    }
+    .guide-title {
+      font-size: 1.1rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #ffd700;
+    }
+    .guide-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+    }
+    .guide-step {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 0.88rem;
+      color: var(--text-muted);
+      line-height: 1.4;
+    }
+    .step-num {
+      background: #ff7e5f;
+      color: white;
+      font-weight: 900;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 0.78rem;
+    }
+
+    /* ---------------------------------------------------------
+       SCREEN: TEACHER LOBBY
+       --------------------------------------------------------- */
+    .pin-display-wrapper {
+      margin: 10px 0 24px;
+    }
+    .pin-label {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .pin-box {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      background: rgba(255, 255, 255, 0.95);
+      color: #2b0854;
+      padding: 14px 36px;
+      border-radius: var(--radius-lg);
+      font-size: clamp(2.5rem, 6vw, 4rem);
+      font-weight: 900;
+      letter-spacing: 8px;
+      cursor: pointer;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4), inset 0 2px 0 rgba(255, 255, 255, 0.8);
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .pin-box:hover {
+      transform: scale(1.03);
+      box-shadow: 0 14px 40px rgba(255, 215, 0, 0.5);
+    }
+    .pin-box .copy-icon {
+      font-size: 1.6rem;
+      opacity: 0.6;
+    }
+    .pin-hint {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      margin-top: 8px;
+    }
+
+    .lobby-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      justify-content: center;
+      margin-bottom: 28px;
+    }
+
+    .students-lobby-section {
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: var(--radius-md);
+      padding: 24px;
+      width: 100%;
+      min-height: 220px;
+      display: flex;
+      flex-direction: column;
+    }
+    .students-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .students-count-badge {
+      background: #10b981;
+      padding: 4px 14px;
+      border-radius: var(--radius-full);
+      font-size: 0.9rem;
+      font-weight: 800;
+    }
+
+    .students-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 14px;
+      width: 100%;
+    }
+    .student-chip {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    @keyframes popIn {
+      from { transform: scale(0.6); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .student-chip .avatar {
+      font-size: 2.2rem;
+    }
+    .student-chip .name {
+      font-size: 0.95rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 120px;
+    }
+
+    .empty-students-notice {
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      color: var(--text-dim);
+    }
+    .empty-students-notice .spinner {
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #ffd700;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* ---------------------------------------------------------
+       SCREEN: STUDENT JOIN
+       --------------------------------------------------------- */
+    .join-form {
+      max-width: 440px;
+      margin: 0 auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .input-group {
+      text-align: left;
+    }
+    .input-label {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 6px;
+      display: block;
+      color: var(--text-muted);
+    }
+    .input-field {
+      width: 100%;
+      background: rgba(255, 255, 255, 0.95);
+      border: 2px solid transparent;
+      border-radius: var(--radius-md);
+      padding: 16px 20px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: #2b0854;
+      font-family: var(--font-main);
+      text-align: center;
+      transition: all 0.2s ease;
+      outline: none;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+    }
+    .input-field:focus {
+      border-color: #ffd700;
+      box-shadow: 0 0 0 4px rgba(255, 215, 0, 0.35);
+      background: #ffffff;
+    }
+    .pin-input {
+      letter-spacing: 6px;
+      font-size: 1.6rem;
+    }
+
+    /* Avatar selector */
+    .avatar-selector {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 6px;
+    }
+    .avatar-btn {
+      background: rgba(255, 255, 255, 0.15);
+      border: 2px solid transparent;
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .avatar-btn:hover {
+      transform: scale(1.15);
+      background: rgba(255, 255, 255, 0.3);
+    }
+    .avatar-btn.selected {
+      border-color: #ffd700;
+      background: rgba(255, 215, 0, 0.3);
+      transform: scale(1.2);
+      box-shadow: 0 0 14px rgba(255, 215, 0, 0.6);
+    }
+
+    .form-error {
+      background: rgba(226, 27, 60, 0.85);
+      border: 1px solid #ff4d6d;
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: white;
+      display: none;
+      animation: shake 0.4s ease;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+
+    /* ---------------------------------------------------------
+       SCREEN: STUDENT WAITING
+       --------------------------------------------------------- */
+    .waiting-card {
+      padding: 48px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 18px;
+    }
+    .radar-pulse {
+      position: relative;
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: rgba(255, 215, 0, 0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 3rem;
+      margin-bottom: 10px;
+    }
+    .radar-pulse::before, .radar-pulse::after {
+      content: '';
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      border: 2px solid #ffd700;
+      animation: radarRing 2s cubic-bezier(0.2, 0.8, 0.2, 1) infinite;
+    }
+    .radar-pulse::after {
+      animation-delay: 1s;
+    }
+    @keyframes radarRing {
+      0% { transform: scale(1); opacity: 0.8; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+
+    .student-badge-large {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.2);
+      padding: 10px 22px;
+      border-radius: var(--radius-full);
+      font-size: 1.3rem;
+      font-weight: 800;
+    }
+
+    /* ---------------------------------------------------------
+       SCREEN: GAME PLAY (COMMON / TEACHER & STUDENT)
+       --------------------------------------------------------- */
+    .game-top-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 16px;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+    .question-badge {
+      background: rgba(255, 255, 255, 0.18);
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      font-weight: 800;
+      font-size: 1rem;
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .timer-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 2px solid #ffd700;
+      padding: 6px 18px;
+      border-radius: var(--radius-full);
+      font-weight: 900;
+      font-size: 1.25rem;
+      color: #ffd700;
+      min-width: 110px;
+      justify-content: center;
+      transition: all 0.3s ease;
+    }
+    .timer-badge.warning {
+      border-color: #ff3838;
+      color: #ff3838;
+      animation: timerWarning 0.6s infinite alternate;
+    }
+    @keyframes timerWarning {
+      from { transform: scale(1); }
+      to { transform: scale(1.08); }
+    }
+
+    .answered-count-badge {
+      background: rgba(16, 185, 129, 0.25);
+      border: 1px solid #10b981;
+      padding: 8px 18px;
+      border-radius: var(--radius-full);
+      font-weight: 800;
+      font-size: 0.95rem;
+      color: #6ee7b7;
+    }
+
+    /* Progress bar for time */
+    .timer-progress-wrap {
+      width: 100%;
+      height: 10px;
+      background: rgba(255, 255, 255, 0.15);
+      border-radius: var(--radius-full);
+      overflow: hidden;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    .timer-progress-fill {
+      height: 100%;
+      width: 100%;
+      background: linear-gradient(90deg, #10b981, #ffd700, #ff4d6d);
+      border-radius: var(--radius-full);
+      transition: width 0.1s linear;
+    }
+
+    /* Question & Country visual */
+    .country-visual-card {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      border-radius: var(--radius-lg);
+      padding: 24px 20px;
+      width: 100%;
+      margin-bottom: 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    }
+
+    .flag-question-title {
+      font-size: clamp(1.4rem, 3.5vw, 2.1rem);
+      font-weight: 900;
+      letter-spacing: -0.5px;
+      margin-bottom: 18px;
+      color: #ffffff;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+      text-align: center;
+    }
+
+    .flag-frame-box {
+      width: 100%;
+      max-width: 360px;
+      aspect-ratio: 3 / 2;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.55), 0 0 0 3px rgba(255, 255, 255, 0.35);
+      background: #000000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.25s ease, box-shadow 0.25s ease;
+      position: relative;
+    }
+    .flag-frame-box:hover {
+      transform: scale(1.02);
+      box-shadow: 0 20px 42px rgba(0, 0, 0, 0.65), 0 0 0 3px rgba(255, 215, 0, 0.6);
+    }
+    .flag-frame-box svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+    }
+
+    /* KAHOOT 4 ANSWERS GRID */
+    .answers-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      width: 100%;
+    }
+    @media (max-width: 640px) {
+      .answers-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .answer-btn {
+      position: relative;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 22px 20px;
+      color: white;
+      font-family: var(--font-main);
+      font-size: clamp(1.15rem, 2.2vw, 1.35rem);
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      text-align: left;
+      user-select: none;
+      transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .answer-btn:active {
+      transform: translateY(4px) scale(0.98);
+    }
+    .answer-btn:disabled {
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .answer-shape {
+      width: 38px;
+      height: 38px;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 8px;
+    }
+    .answer-text {
+      flex: 1;
+      line-height: 1.3;
+    }
+
+    /* Kahoot 4 Colors */
+    .btn-red {
+      background: var(--color-red);
+      box-shadow: 0 6px 0 var(--color-red-shadow), 0 10px 25px rgba(226, 27, 60, 0.4);
+    }
+    .btn-red:hover:not(:disabled) {
+      background: var(--color-red-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 0 var(--color-red-shadow), 0 14px 28px rgba(226, 27, 60, 0.5);
+    }
+
+    .btn-blue {
+      background: var(--color-blue);
+      box-shadow: 0 6px 0 var(--color-blue-shadow), 0 10px 25px rgba(19, 104, 206, 0.4);
+    }
+    .btn-blue:hover:not(:disabled) {
+      background: var(--color-blue-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 0 var(--color-blue-shadow), 0 14px 28px rgba(19, 104, 206, 0.5);
+    }
+
+    .btn-yellow {
+      background: var(--color-yellow);
+      box-shadow: 0 6px 0 var(--color-yellow-shadow), 0 10px 25px rgba(216, 158, 0, 0.4);
+    }
+    .btn-yellow:hover:not(:disabled) {
+      background: var(--color-yellow-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 0 var(--color-yellow-shadow), 0 14px 28px rgba(216, 158, 0, 0.5);
+    }
+
+    .btn-green {
+      background: var(--color-green);
+      box-shadow: 0 6px 0 var(--color-green-shadow), 0 10px 25px rgba(38, 137, 12, 0.4);
+    }
+    .btn-green:hover:not(:disabled) {
+      background: var(--color-green-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 0 var(--color-green-shadow), 0 14px 28px rgba(38, 137, 12, 0.5);
+    }
+
+    /* Selection State on Student buttons */
+    .answer-btn.selected-choice {
+      border: 3px solid #ffffff;
+      box-shadow: 0 0 25px rgba(255, 255, 255, 0.8), 0 6px 0 rgba(0, 0, 0, 0.4);
+      transform: scale(1.02);
+    }
+    .answer-btn.dimmed {
+      opacity: 0.35;
+      filter: grayscale(40%);
+    }
+
+    /* ---------------------------------------------------------
+       SCREEN: STUDENT ANSWER FEEDBACK
+       --------------------------------------------------------- */
+    .feedback-box {
+      padding: 40px 24px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 16px;
+      width: 100%;
+    }
+    .feedback-icon {
+      font-size: 5rem;
+      animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .feedback-title {
+      font-size: clamp(2rem, 5vw, 3rem);
+      font-weight: 900;
+    }
+    .feedback-points {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: #ffd700;
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px 24px;
+      border-radius: var(--radius-full);
+    }
+    .feedback-rank {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+    .feedback-status {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      margin-top: 10px;
+    }
+
+    /* ---------------------------------------------------------
+       SCREEN: TEACHER ROUND RESULTS / LEADERBOARD
+       --------------------------------------------------------- */
+    .round-results-card {
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      width: 100%;
+    }
+    .correct-answer-banner {
+      background: rgba(16, 185, 129, 0.2);
+      border: 2px solid #10b981;
+      border-radius: var(--radius-md);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      font-size: 1.25rem;
+      font-weight: 800;
+      color: #6ee7b7;
+    }
+
+    /* Answer distribution bars */
+    .stats-bars {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 10px 0;
+    }
+    @media (max-width: 500px) {
+      .stats-bars {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+    .stat-bar-col {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 8px;
+    }
+    .stat-count {
+      font-weight: 900;
+      font-size: 1.2rem;
+    }
+    .stat-pill {
+      width: 100%;
+      height: 80px;
+      background: rgba(0, 0, 0, 0.3);
+      border-radius: var(--radius-sm);
+      display: flex;
+      align-items: flex-end;
+      overflow: hidden;
+      padding: 4px;
+    }
+    .stat-pill-inner {
+      width: 100%;
+      border-radius: 6px;
+      transition: height 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+      min-height: 8px;
+    }
+    .stat-shape-tag {
+      font-size: 1.1rem;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: var(--radius-sm);
+      color: white;
+    }
+
+    /* Mini Leaderboard */
+    .mini-leaderboard {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 100%;
+      margin: 10px 0;
+    }
+    .leader-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 18px;
+      background: rgba(255, 255, 255, 0.12);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+    }
+    .leader-row:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+    .leader-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .leader-rank {
+      font-size: 1.15rem;
+      font-weight: 900;
+      width: 28px;
+      text-align: center;
+    }
+    .leader-rank.rank-1 { color: #ffd700; }
+    .leader-rank.rank-2 { color: #c0c0c0; }
+    .leader-rank.rank-3 { color: #cd7f32; }
+
+    .leader-avatar {
+      font-size: 1.6rem;
+    }
+    .leader-name {
+      font-size: 1.1rem;
+      font-weight: 800;
+    }
+    .leader-score {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: #ffd700;
+    }
+
+    /* ---------------------------------------------------------
+       SCREEN: FINAL PODIUM & RESULTS
+       --------------------------------------------------------- */
+    .final-card {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+      position: relative;
+    }
+    .final-title {
+      font-size: clamp(2.4rem, 6vw, 3.6rem);
+      font-weight: 900;
+      background: linear-gradient(90deg, #ffd700, #ff8c00, #ff007f);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* 3D-Style Podium */
+    .podium-container {
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      gap: 14px;
+      width: 100%;
+      max-width: 550px;
+      margin: 20px 0 10px;
+      min-height: 260px;
+    }
+    .podium-step {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+    .podium-avatar {
+      font-size: 3rem;
+      margin-bottom: 6px;
+      filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.4));
+      animation: bouncePedestal 2.5s infinite;
+    }
+    .podium-name {
+      font-weight: 800;
+      font-size: 1rem;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 110px;
+    }
+    .podium-score {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #ffd700;
+      margin-bottom: 8px;
+    }
+    .podium-block {
+      width: 100%;
+      border-radius: var(--radius-md) var(--radius-md) 0 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 12px;
+      font-weight: 900;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+    }
+    .podium-block .rank-number {
+      font-size: 2.2rem;
+      line-height: 1;
+    }
+    .step-1 {
+      order: 2;
+    }
+    .step-1 .podium-block {
+      height: 170px;
+      background: linear-gradient(180deg, #ffd700 0%, #b8860b 100%);
+      color: #4a2800;
+    }
+    .step-2 {
+      order: 1;
+    }
+    .step-2 .podium-block {
+      height: 125px;
+      background: linear-gradient(180deg, #e0e0e0 0%, #757575 100%);
+      color: #212121;
+    }
+    .step-3 {
+      order: 3;
+    }
+    .step-3 .podium-block {
+      height: 95px;
+      background: linear-gradient(180deg, #cd7f32 0%, #8c4a12 100%);
+      color: #2b1303;
+    }
+    @keyframes bouncePedestal {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    .student-personal-result {
+      background: rgba(255, 215, 0, 0.2);
+      border: 2px solid #ffd700;
+      border-radius: var(--radius-md);
+      padding: 16px 24px;
+      width: 100%;
+      max-width: 440px;
+      text-align: center;
+      font-size: 1.2rem;
+      font-weight: 800;
+    }
+
+    /* Confetti Canvas */
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    /* Toast Notification */
+    .toast-msg {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #10b981;
+      color: white;
+      padding: 12px 24px;
+      border-radius: var(--radius-full);
+      font-weight: 700;
+      font-size: 0.95rem;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+      z-index: 1000;
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      pointer-events: none;
+    }
+    .toast-msg.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Real Devices Info Box */
+    .devices-info-card {
+      margin-top: 30px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: var(--radius-md);
+      padding: 20px 24px;
+      width: 100%;
+      text-align: left;
+    }
+    .devices-info-title {
+      font-size: 1.05rem;
+      font-weight: 800;
+      color: #ffd700;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .devices-info-text {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* Utility Helpers */
+    .text-center { text-align: center; }
+    .mt-4 { margin-top: 16px; }
+    .mb-4 { margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+
+  <!-- Background decorative ambient bubbles -->
+  <div class="bg-effects">
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+  </div>
+
+  <!-- Confetti Canvas for Victory Celebrations -->
+  <canvas id="confetti-canvas"></canvas>
+
+  <!-- Sticky Global Header -->
+  <header class="app-header">
+    <div class="brand-logo-small" onclick="handleLogoClick()">
+      <span class="logo-badge">⚡</span>
+      <span class="logo-text">Quiz Zone</span>
+    </div>
+    <div class="header-controls">
+      <!-- Database Status / Settings Button -->
+      <button class="db-status-btn" id="dbStatusBtn" onclick="openDbSettingsModal()" title="Настройки базы данных (Firebase / Онлайн)">
+        <span class="status-dot" id="dbStatusDot"></span>
+        <span id="dbStatusText">Облако</span>
+      </button>
+
+      <!-- Sound Toggle -->
+      <button class="sound-btn" id="soundToggleBtn" onclick="toggleSound()" title="Звук">
+        🔊
+      </button>
+
+      <!-- Language Switcher: Instant switch between RU & UZ -->
+      <div class="lang-toggle-btn" onclick="toggleLanguage()" title="Сменить язык / Tilni o'zgartirish">
+        <span class="lang-opt" id="langOptRu">РУС</span>
+        <span class="lang-opt" id="langOptUz">O'ZB</span>
+      </div>
+    </div>
+  </header>
+
+  <!-- MAIN APP CONTAINER -->
+  <main id="app">
+
+    <!-- =========================================================
+         SCREEN 1: HOME / ROLE SELECT
+         ========================================================= -->
+    <section class="screen active" id="screenHome">
+      <div class="home-hero text-center">
+        <h1 class="home-title">Quiz Zone</h1>
+        <p class="home-subtitle" data-i18n="homeSubtitle">
+          Увлекательная викторина «Угадай страну» в стиле Kahoot!
+        </p>
+      </div>
+
+      <div class="role-grid">
+        <!-- Teacher Role -->
+        <div class="role-card" onclick="startAsTeacher()">
+          <div class="role-icon">👨‍🏫</div>
+          <h2 class="role-title" data-i18n="teacherBtn">Войти как учитель</h2>
+          <p class="role-desc" data-i18n="teacherDesc">
+            Создайте комнату с 6-значным PIN-кодом, управляйте вопросами и покажите викторину классу.
+          </p>
+          <button class="btn btn-primary" type="button" data-i18n="teacherBtn">
+            Войти как учитель
+          </button>
+        </div>
+
+        <!-- Student Role -->
+        <div class="role-card" onclick="showStudentJoin()">
+          <div class="role-icon">🎒</div>
+          <h2 class="role-title" data-i18n="studentBtn">Войти как ученик</h2>
+          <p class="role-desc" data-i18n="studentDesc">
+            Введите PIN-код комнаты и своё имя, чтобы отвечать на вопросы со своего устройства.
+          </p>
+          <button class="btn btn-success" type="button" data-i18n="studentBtn">
+            Войти как ученик
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick 3-Step Guide -->
+      <div class="guide-box">
+        <div class="guide-title">
+          <span>💡</span> <span data-i18n="howToPlay">Как играть:</span>
+        </div>
+        <div class="guide-steps">
+          <div class="guide-step">
+            <span class="step-num">1</span>
+            <span data-i18n="howToPlayStep1">Откройте одну вкладку как учитель и получите 6-значный PIN.</span>
+          </div>
+          <div class="guide-step">
+            <span class="step-num">2</span>
+            <span data-i18n="howToPlayStep2">Откройте одну или несколько других вкладок как ученики и введите PIN.</span>
+          </div>
+          <div class="guide-step">
+            <span class="step-num">3</span>
+            <span data-i18n="howToPlayStep3">Учитель нажимает «Начать игру», и все соревнуются в реальном времени!</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SCREEN 2: TEACHER LOBBY (WAITING FOR STUDENTS)
+         ========================================================= -->
+    <section class="screen" id="screenTeacherLobby">
+      <div class="glass-card">
+        <div class="pin-display-wrapper">
+          <div class="pin-label" data-i18n="gamePinLabel">PIN-код игры:</div>
+          <div class="pin-box" id="teacherPinDisplay" onclick="copyPinToClipboard()" title="Нажмите, чтобы скопировать">
+            <span id="pinValue">000000</span>
+            <span class="copy-icon">📋</span>
+          </div>
+          <div class="pin-hint" data-i18n="clickToCopy">Нажмите на код, чтобы скопировать</div>
+        </div>
+
+        <!-- Link sharing box for phones -->
+        <div class="lobby-share-box" id="lobbyShareBox" style="margin-bottom: 22px; font-size: 0.95rem; color: var(--text-muted); background: rgba(0,0,0,0.25); padding: 10px 18px; border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;">
+          <span>📱 <strong data-i18n="shareLinkPrefix">Для телефонов:</strong> откройте страницу игры и введите PIN, либо:</span>
+          <button class="btn btn-secondary" type="button" style="padding: 6px 14px; font-size: 0.85rem;" onclick="copyJoinLinkToClipboard()">
+            <span>📋</span> <span data-i18n="copyLinkBtn">Скопировать ссылку для входа</span>
+          </button>
+        </div>
+
+        <div class="lobby-actions">
+          <!-- Start Game Button -->
+          <button class="btn btn-primary" id="btnStartGame" onclick="teacherStartGame()" disabled>
+            <span>🚀</span> <span data-i18n="startGameBtn">Начать игру</span>
+          </button>
+          <!-- Quick test button: opens student tab in new window -->
+          <button class="btn btn-secondary" onclick="openStudentTabTest()">
+            <span>➕</span> <span data-i18n="openStudentTabBtn">Открыть вкладку ученика</span>
+          </button>
+          <!-- Leave / Cancel Room -->
+          <button class="btn btn-secondary" onclick="leaveToHome()">
+            <span>🚪</span> <span data-i18n="leaveRoom">Выйти</span>
+          </button>
+        </div>
+
+        <div class="students-lobby-section">
+          <div class="students-header">
+            <strong data-i18n="joinedStudentsTitle">Подключившиеся ученики:</strong>
+            <span class="students-count-badge" id="lobbyStudentCount">0</span>
+          </div>
+
+          <div class="students-grid" id="lobbyStudentsGrid">
+            <!-- Dynamic student chips populated here -->
+          </div>
+
+          <div class="empty-students-notice" id="emptyStudentsNotice">
+            <div class="spinner"></div>
+            <p data-i18n="noStudentsYet">
+              Ожидаем учеников... Откройте новую вкладку браузера и войдите по PIN-коду!
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SCREEN 3: STUDENT JOIN
+         ========================================================= -->
+    <section class="screen" id="screenStudentJoin">
+      <div class="glass-card">
+        <h2 class="role-title" style="font-size: 2rem; margin-bottom: 24px;" data-i18n="joinTitle">
+          Вход в игру
+        </h2>
+
+        <form class="join-form" onsubmit="handleStudentJoinSubmit(event)">
+          <div class="input-group">
+            <label class="input-label" data-i18n="pinPlaceholder">6-значный PIN игры:</label>
+            <input 
+              type="text" 
+              class="input-field pin-input" 
+              id="studentPinInput" 
+              maxlength="6" 
+              placeholder="123456" 
+              autocomplete="off"
+              inputmode="numeric"
+            >
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" data-i18n="namePlaceholder">Ваше имя или никнейм:</label>
+            <input 
+              type="text" 
+              class="input-field" 
+              id="studentNameInput" 
+              maxlength="16" 
+              placeholder="Ваше имя..." 
+              data-i18n-placeholder="nameInputPlaceholder"
+              autocomplete="nickname"
+            >
+          </div>
+
+          <div class="input-group">
+            <label class="input-label" data-i18n="chooseAvatarLabel">Выберите аватар:</label>
+            <div class="avatar-selector" id="avatarSelector">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+
+          <div class="form-error" id="joinErrorMsg"></div>
+
+          <button class="btn btn-success" type="submit" id="btnJoinRoom">
+            <span>✨</span> <span data-i18n="joinBtn">Войти</span>
+          </button>
+
+          <button class="btn btn-secondary" type="button" onclick="leaveToHome()">
+            <span data-i18n="backBtn">Назад</span>
+          </button>
+        </form>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SCREEN 4: STUDENT WAITING ROOM
+         ========================================================= -->
+    <section class="screen" id="screenStudentWaiting">
+      <div class="glass-card waiting-card">
+        <div class="radar-pulse" id="studentRadarAvatar">🦊</div>
+        <div class="student-badge-large">
+          <span id="waitingStudentAvatar">🦊</span>
+          <span id="waitingStudentName">Ученик</span>
+        </div>
+
+        <h2 style="font-size: 1.8rem; font-weight: 900;" data-i18n="waitingHostTitle">
+          Вы в игре!
+        </h2>
+        <p style="color: var(--text-muted); font-size: 1.1rem; max-width: 480px;" data-i18n="waitingHostText">
+          Ждём, пока учитель начнёт игру...
+        </p>
+        <p style="color: #ffd700; font-weight: 700; font-size: 0.95rem;" data-i18n="readyToCompete">
+          ⚡ Отвечайте быстро — чем быстрее ответ, тем больше очков!
+        </p>
+
+        <div style="margin-top: 10px;">
+          <span style="color: var(--text-dim); font-size: 0.9rem;" data-i18n="gamePinLabel">PIN-код игры:</span>
+          <strong id="studentWaitingPinBadge" style="letter-spacing: 2px; font-size: 1.1rem; margin-left: 6px;"></strong>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SCREEN 5: TEACHER GAME SCREEN (HOST VIEW)
+         ========================================================= -->
+    <section class="screen" id="screenTeacherGame">
+      <div class="game-top-bar">
+        <div class="question-badge" id="teacherQuestionBadge">
+          Вопрос 1 из 8
+        </div>
+        <div class="timer-badge" id="teacherTimerBadge">
+          ⏱️ <span id="teacherTimerVal">20</span><span data-i18n="secondsShort">с</span>
+        </div>
+        <div class="answered-count-badge" id="teacherAnsweredBadge">
+          Ответили: 0 / 0
+        </div>
+      </div>
+
+      <!-- 20s progress bar -->
+      <div class="timer-progress-wrap">
+        <div class="timer-progress-fill" id="teacherTimerBar"></div>
+      </div>
+
+      <!-- Flag Question Display (Teacher) -->
+      <div class="country-visual-card">
+        <h2 class="flag-question-title" data-i18n="flagQuestionTitle">Какая это страна?</h2>
+        <div class="flag-frame-box" id="teacherFlagContainer"></div>
+      </div>
+
+      <!-- Answers Preview (Host View) -->
+      <div class="answers-grid" id="teacherAnswersGrid">
+        <div class="answer-btn btn-red" disabled>
+          <div class="answer-shape">▲</div>
+          <div class="answer-text" id="teacherAns0">Вариант 1</div>
+        </div>
+        <div class="answer-btn btn-blue" disabled>
+          <div class="answer-shape">◆</div>
+          <div class="answer-text" id="teacherAns1">Вариант 2</div>
+        </div>
+        <div class="answer-btn btn-yellow" disabled>
+          <div class="answer-shape">●</div>
+          <div class="answer-text" id="teacherAns2">Вариант 3</div>
+        </div>
+        <div class="answer-btn btn-green" disabled>
+          <div class="answer-shape">■</div>
+          <div class="answer-text" id="teacherAns3">Вариант 4</div>
+        </div>
+      </div>
+
+      <!-- Skip timer button for teacher -->
+      <div style="margin-top: 20px;">
+        <button class="btn btn-secondary" onclick="teacherForceEndQuestion()">
+          <span>⏩</span> <span data-i18n="skipTimerBtn">Завершить вопрос досрочно</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SCREEN 6: TEACHER ROUND RESULTS (MINI-LEADERBOARD)
+         ========================================================= -->
+    <section class="screen" id="screenTeacherRound">
+      <div class="glass-card round-results-card">
+        <h2 style="font-size: 1.8rem; font-weight: 900;" data-i18n="roundResultsTitle">
+          Результаты раунда
+        </h2>
+
+        <!-- Correct answer banner -->
+        <div class="correct-answer-banner">
+          <span>✅</span>
+          <span data-i18n="correctAnswerWas">Правильный ответ:</span>
+          <strong id="roundCorrectCountryText">Узбекистан</strong>
+        </div>
+
+        <!-- Answers distribution breakdown -->
+        <div>
+          <div style="font-size: 0.95rem; color: var(--text-muted); margin-bottom: 8px;" data-i18n="distributionTitle">
+            Как ответили ученики:
+          </div>
+          <div class="stats-bars">
+            <div class="stat-bar-col">
+              <span class="stat-count" id="statCount0">0</span>
+              <div class="stat-pill">
+                <div class="stat-pill-inner" id="statFill0" style="background: var(--color-red); height: 10%;"></div>
+              </div>
+              <div class="stat-shape-tag" style="background: var(--color-red);">▲</div>
+            </div>
+            <div class="stat-bar-col">
+              <span class="stat-count" id="statCount1">0</span>
+              <div class="stat-pill">
+                <div class="stat-pill-inner" id="statFill1" style="background: var(--color-blue); height: 10%;"></div>
+              </div>
+              <div class="stat-shape-tag" style="background: var(--color-blue);">◆</div>
+            </div>
+            <div class="stat-bar-col">
+              <span class="stat-count" id="statCount2">0</span>
+              <div class="stat-pill">
+                <div class="stat-pill-inner" id="statFill2" style="background: var(--color-yellow); height: 10%;"></div>
+              </div>
+              <div class="stat-shape-tag" style="background: var(--color-yellow);">●</div>
+            </div>
+            <div class="stat-bar-col">
+              <span class="stat-count" id="statCount3">0</span>
+              <div class="stat-pill">
+                <div class="stat-pill-inner" id="statFill3" style="background: var(--color-green); height: 10%;"></div>
+              </div>
+              <div class="stat-shape-tag" style="background: var(--color-green);">■</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leaderboard Table -->
+        <div>
+          <h3 style="font-size: 1.25rem; font-weight: 800; margin-bottom: 12px; text-align: left;" data-i18n="currentStandingsTitle">
+            Текущий рейтинг:
+          </h3>
+          <div class="mini-leaderboard" id="roundMiniLeaderboard">
+            <!-- Dynamic rows -->
+          </div>
+        </div>
+
+        <!-- Next Question / Final Podium Button -->
+        <div style="margin-top: 10px;">
+          <button class="btn btn-primary" id="btnNextQuestion" onclick="teacherNextQuestion()">
+            <span>➡️</span> <span id="btnNextQuestionText" data-i18n="nextQuestionBtn">Следующий вопрос</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SCREEN 7: STUDENT GAME PLAY (INTERACTIVE ANSWER BUTTONS)
+         ========================================================= -->
+    <section class="screen" id="screenStudentGame">
+      <div class="game-top-bar">
+        <div class="question-badge" id="studentQuestionBadge">
+          Вопрос 1 из 8
+        </div>
+        <div class="timer-badge" id="studentTimerBadge">
+          ⏱️ <span id="studentTimerVal">20</span><span data-i18n="secondsShort">с</span>
+        </div>
+        <div class="answered-count-badge" id="studentScoreBadge">
+          Счёт: 0
+        </div>
+      </div>
+
+      <!-- 20s progress bar -->
+      <div class="timer-progress-wrap">
+        <div class="timer-progress-fill" id="studentTimerBar"></div>
+      </div>
+
+      <!-- Flag Question Display (Student) -->
+      <div class="country-visual-card">
+        <h2 class="flag-question-title" data-i18n="flagQuestionTitle">Какая это страна?</h2>
+        <div class="flag-frame-box" id="studentFlagContainer"></div>
+      </div>
+
+      <!-- 4 Kahoot colored buttons -->
+      <div class="answers-grid" id="studentAnswersGrid">
+        <button class="answer-btn btn-red" onclick="studentChooseAnswer(0)" id="studentAnsBtn0">
+          <div class="answer-shape">▲</div>
+          <div class="answer-text" id="studentAns0">Вариант 1</div>
+        </button>
+        <button class="answer-btn btn-blue" onclick="studentChooseAnswer(1)" id="studentAnsBtn1">
+          <div class="answer-shape">◆</div>
+          <div class="answer-text" id="studentAns1">Вариант 2</div>
+        </button>
+        <button class="answer-btn btn-yellow" onclick="studentChooseAnswer(2)" id="studentAnsBtn2">
+          <div class="answer-shape">●</div>
+          <div class="answer-text" id="studentAns2">Вариант 3</div>
+        </button>
+        <button class="answer-btn btn-green" onclick="studentChooseAnswer(3)" id="studentAnsBtn3">
+          <div class="answer-shape">■</div>
+          <div class="answer-text" id="studentAns3">Вариант 4</div>
+        </button>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SCREEN 8: STUDENT ANSWER FEEDBACK
+         ========================================================= -->
+    <section class="screen" id="screenStudentFeedback">
+      <div class="glass-card feedback-box">
+        <div class="feedback-icon" id="feedbackIcon">🎉</div>
+        <h2 class="feedback-title" id="feedbackTitle">Правильно!</h2>
+        <div class="feedback-points" id="feedbackPoints">+950 очков</div>
+        <div class="feedback-rank" id="feedbackRank">Ваше текущее место: #1</div>
+        <div class="feedback-status" data-i18n="waitingTeacherNext">
+          Ждём следующий вопрос от учителя...
+        </div>
+      </div>
+    </section>
+
+    <!-- =========================================================
+         SCREEN 9: FINAL PODIUM & RESULTS
+         ========================================================= -->
+    <section class="screen" id="screenFinal">
+      <div class="glass-card final-card">
+        <h1 class="final-title" data-i18n="gameOverTitle">Игра окончена!</h1>
+        <p style="color: var(--text-muted); font-size: 1.15rem;" data-i18n="topPlayersTitle">
+          Победители викторины «Quiz Zone»
+        </p>
+
+        <!-- 3D Podium for Top 3 -->
+        <div class="podium-container" id="podiumContainer">
+          <!-- Populated dynamically via JS -->
+        </div>
+
+        <!-- Personal result if student -->
+        <div class="student-personal-result" id="studentPersonalResult" style="display: none;">
+          <div id="studentPersonalResultText">Ваше место: 1 из 5</div>
+        </div>
+
+        <!-- Full Leaderboard Table (Top 5) -->
+        <div style="width: 100%; max-width: 550px;">
+          <div class="mini-leaderboard" id="finalFullLeaderboard">
+            <!-- Rows -->
+          </div>
+        </div>
+
+        <!-- Play Again / Return Home Button -->
+        <button class="btn btn-primary" onclick="leaveToHome()">
+          <span>🔄</span> <span data-i18n="playAgainBtn">В главное меню</span>
+        </button>
+
+        <!-- Instructions for playing on real devices -->
+        <div class="devices-info-card">
+          <div class="devices-info-title">
+            <span>🌐</span> <span data-i18n="multiDeviceTitle">Как играть на реальных смартфонах и устройствах?</span>
+          </div>
+          <div class="devices-info-text" data-i18n="multiDeviceText">
+            Игра поддерживает подключение с любых смартфонов, планшетов и компьютеров через бесплатную базу Firebase Realtime Database. Чтобы играть с классом, просто откройте настройки базы данных (значок ☁️ в верхнем меню) и подключите проект Firebase.
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Database Settings Modal -->
+  <div class="modal-overlay" id="dbSettingsModal">
+    <div class="modal-box">
+      <div class="modal-title">
+        <span>☁️ <span data-i18n="dbModalTitle">Настройки базы данных (Онлайн)</span></span>
+        <button class="modal-close-btn" onclick="closeDbSettingsModal()" type="button">&times;</button>
+      </div>
+      <p class="modal-desc" data-i18n="dbModalDesc">
+        Для игры с разных телефонов и компьютеров через интернет используется бесплатная облачная база <strong>Firebase Realtime Database</strong>. Комнаты, PIN-коды и очки сохраняются в ней и синхронизируются мгновенно.
+      </p>
+
+      <div style="margin-bottom: 14px;">
+        <div style="font-weight: 700; font-size: 0.95rem; margin-bottom: 6px;" data-i18n="dbStatusLabel">
+          Текущий статус:
+        </div>
+        <div id="modalStatusBadge" style="display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: var(--radius-full); background: rgba(0,0,0,0.3); font-size: 0.9rem;">
+          <span class="status-dot" id="modalStatusDot"></span>
+          <span id="modalStatusText">Проверка...</span>
+        </div>
+      </div>
+
+      <div class="steps-list">
+        <strong>📋 <span data-i18n="howToSetupFirebase">Как подключить бесплатный Firebase за 2 минуты:</span></strong>
+        <ol>
+          <li>Перейдите на <a href="https://console.firebase.google.com/" target="_blank" rel="noopener">console.firebase.google.com</a> и нажмите «Создать проект» (любое имя).</li>
+          <li>В меню: <strong>Сборка (Build) &rarr; Realtime Database &rarr; Создать базу данных</strong> (выберите регион, режим: <em>«В тестовом режиме»</em>).</li>
+          <li>В настройках проекта (значок шестерёнки ⚙️ вверху слева) в блоке «Ваши приложения» нажмите значок <code>&lt;/&gt;</code> (Web), введите имя и скопируйте объект <code>firebaseConfig</code>.</li>
+          <li>Вставьте скопированный код или JSON в поле ниже и нажмите «Сохранить».</li>
+        </ol>
+      </div>
+
+      <label style="font-size: 0.9rem; font-weight: 700; display: block; margin-bottom: 6px;" data-i18n="pasteConfigLabel">
+        Вставьте объект firebaseConfig или JSON:
+      </label>
+      <textarea class="config-textarea" id="firebaseConfigInput" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;...&quot;,&#10;  authDomain: &quot;...&quot;,&#10;  databaseURL: &quot;https://...-default-rtdb.firebaseio.com&quot;,&#10;  projectId: &quot;...&quot;&#10;};"></textarea>
+
+      <div style="display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+        <button class="btn btn-secondary" type="button" onclick="testDbConnection()">
+          <span>🔍</span> <span data-i18n="testConnBtn">Проверить подключение</span>
+        </button>
+        <button class="btn btn-primary" type="button" onclick="saveDbSettings()">
+          <span>💾</span> <span data-i18n="saveSettingsBtn">Сохранить и подключиться</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Element -->
+  <div class="toast-msg" id="toastMsg">Скопировано!</div>
+
+  <!-- =========================================================
+       JAVASCRIPT LOGIC
+       ========================================================= -->
+  <script>
+    /* =========================================================
+       1. TRANSLATIONS (RUSSIAN & UZBEK LATIN)
+       ========================================================= */
+    const translations = {
+      ru: {
+        gameTitle: "Quiz Zone",
+        homeSubtitle: "Увлекательная викторина «Угадай страну» в стиле Kahoot!",
+        teacherBtn: "Войти как учитель",
+        teacherDesc: "Создайте комнату с 6-значным PIN-кодом, управляйте вопросами и покажите викторину классу.",
+        studentBtn: "Войти как ученик",
+        studentDesc: "Введите PIN-код комнаты и своё имя, чтобы отвечать на вопросы со своего устройства.",
+        howToPlay: "Как играть:",
+        howToPlayStep1: "Откройте одну вкладку как учитель и получите 6-значный PIN.",
+        howToPlayStep2: "Откройте одну или несколько других вкладок как ученики и введите PIN.",
+        howToPlayStep3: "Учитель нажимает «Начать игру», и все соревнуются в реальном времени!",
+        
+        gamePinLabel: "PIN-код игры:",
+        clickToCopy: "Нажмите на код, чтобы скопировать",
+        copiedToast: "PIN-код скопирован в буфер обмена!",
+        startGameBtn: "Начать игру",
+        openStudentTabBtn: "Открыть вкладку ученика",
+        leaveRoom: "Выйти",
+        joinedStudentsTitle: "Подключившиеся ученики:",
+        noStudentsYet: "Ожидаем учеников... Откройте новую вкладку браузера и войдите по PIN-коду!",
+        needAtLeastOneStudent: "Для начала игры нужен хотя бы 1 ученик!",
+
+        joinTitle: "Вход в игру",
+        pinPlaceholder: "6-значный PIN игры:",
+        namePlaceholder: "Ваше имя или никнейм:",
+        chooseAvatarLabel: "Выберите аватар:",
+        joinBtn: "Войти в игру",
+        backBtn: "Назад",
+        errorEmptyPin: "Пожалуйста, введите 6-значный PIN!",
+        errorInvalidPinFormat: "PIN должен состоять ровно из 6 цифр!",
+        errorEmptyName: "Пожалуйста, введите ваше имя!",
+        errorRoomNotFound: "Комната с таким PIN-кодом не найдена! Проверьте код учителя.",
+        errorNameTaken: "Ученик с таким именем уже есть в комнате!",
+
+        waitingHostTitle: "Вы в игре!",
+        waitingHostText: "Ждём, пока учитель начнёт игру...",
+        readyToCompete: "⚡ Отвечайте быстро — чем быстрее ответ, тем больше очков!",
+        secondsShort: "с",
+        answeredFormat: "Ответили: {answered} из {total}",
+        scoreFormat: "Счёт: {score}",
+        questionProgressFormat: "Вопрос {current} из {total}",
+        skipTimerBtn: "Завершить вопрос досрочно",
+
+        correct: "Правильно!",
+        wrong: "Неправильно!",
+        timeout: "Время вышло!",
+        pointsEarned: "+{pts} очков",
+        pointsZero: "0 очков",
+        currentRankFormat: "Ваше текущее место: #{rank}",
+        waitingTeacherNext: "Ждём следующий вопрос от учителя...",
+
+        roundResultsTitle: "Результаты раунда",
+        correctAnswerWas: "Правильный ответ:",
+        distributionTitle: "Как ответили ученики:",
+        currentStandingsTitle: "Текущий рейтинг:",
+        nextQuestionBtn: "Следующий вопрос",
+        goToFinalBtn: "Перейти к итогам",
+
+        gameOverTitle: "Игра окончена!",
+        topPlayersTitle: "Победители викторины «Quiz Zone»",
+        playAgainBtn: "В главное меню",
+        yourFinalResult: "Ваше итоговое место: #{rank} (Счёт: {score})",
+
+        multiDeviceTitle: "Как играть на реальных смартфонах и устройствах?",
+        multiDeviceText: "Игра подключена к общему облачному хранилищу! Ученики могут сканировать QR-код или открывать ссылку с любого смартфона, вводить 6-значный PIN и играть вместе в реальном времени.",
+        ptsUnit: "очков",
+        soundOn: "Звук включён",
+        soundOff: "Звук выключен",
+        flagQuestionTitle: "Какая это страна?",
+        confirmLeave: "Выйти в главное меню?",
+        nameInputPlaceholder: "Ваше имя...",
+        shareLinkPrefix: "Для телефонов:",
+        copyLinkBtn: "Скопировать ссылку для входа",
+        linkCopiedToast: "Ссылка скопирована! Отправьте её игрокам",
+        dbModalTitle: "Настройки базы данных (Онлайн)",
+        dbModalDesc: "Для игры с разных телефонов и компьютеров через интернет используется бесплатная облачная база Firebase Realtime Database. Комнаты, PIN-коды и очки сохраняются в ней.",
+        dbStatusLabel: "Текущий статус:",
+        howToSetupFirebase: "Как подключить Firebase за 2 минуты (бесплатно):",
+        pasteConfigLabel: "Вставьте конфигурацию firebaseConfig или JSON:",
+        testConnBtn: "Проверить подключение",
+        saveSettingsBtn: "Сохранить и подключиться",
+        dbConnectedMsg: "База данных успешно подключена!",
+        dbConnFailedMsg: "Не удалось подключиться к базе. Проверьте конфигурацию Firebase.",
+        dbSavedToast: "Настройки базы данных сохранены!",
+        errorGameAlreadyStarted: "Игра в этой комнате уже началась!",
+        errorClosedByHost: "Учитель завершил игру.",
+        dbNoticeBanner: "Для входа с разных телефонов настройте Firebase (кнопка ☁️ вверху)"
+      },
+      uz: {
+        gameTitle: "Quiz Zone",
+        flagQuestionTitle: "Bu qaysi davlat?",
+        homeSubtitle: "Kahoot uslubidagi «Mamlakatni top» qiziqarli viktorinasi!",
+        teacherBtn: "O'qituvchi sifatida kirish",
+        teacherDesc: "6 xonali PIN-kodli xona oching, savollarni boshqaring va o'yinni sinfga namoyish qiling.",
+        studentBtn: "O'quvchi sifatida kirish",
+        studentDesc: "O'z qurilmangizdan javob berish uchun xona PIN-kodi va ismingizni kiriting.",
+        howToPlay: "Qanday o'ynash kerak:",
+        howToPlayStep1: "Bitta yorliqni o'qituvchi sifatida oching va 6 xonali PIN oling.",
+        howToPlayStep2: "Boshqa yorliqlarni o'quvchi sifatida oching va PIN kodni kiriting.",
+        howToPlayStep3: "O'qituvchi «O'yinni boshlash» tugmasini bosadi va hamma real vaqtda bellashadi!",
+
+        gamePinLabel: "O'yin PIN-kodi:",
+        clickToCopy: "Nusxalash uchun kod ustiga bosing",
+        copiedToast: "PIN-kod xotiraga nusxalandi!",
+        startGameBtn: "O'yinni boshlash",
+        openStudentTabBtn: "O'quvchi yorlig'ini ochish",
+        leaveRoom: "Chiqish",
+        joinedStudentsTitle: "Qo'shilgan o'quvchilar:",
+        noStudentsYet: "O'quvchilar kutilmoqda... Yangi brauzer yorlig'ini ochib, PIN orqali kiring!",
+        needAtLeastOneStudent: "O'yinni boshlash uchun kamida 1 o'quvchi qo'shilishi kerak!",
+
+        joinTitle: "O'yinga kirish",
+        pinPlaceholder: "6 xonali o'yin PIN-kodi:",
+        namePlaceholder: "Ismingiz yoki taxallusingiz:",
+        chooseAvatarLabel: "Avatarni tanlang:",
+        joinBtn: "O'yinga kirish",
+        backBtn: "Orqaga",
+        errorEmptyPin: "Iltimos, 6 xonali PIN kodni kiriting!",
+        errorInvalidPinFormat: "PIN roppa-rosa 6 ta raqamdan iborat bo'lishi kerak!",
+        errorEmptyName: "Iltimos, ismingizni kiriting!",
+        errorRoomNotFound: "Bu PIN-kodli xona topilmadi! O'qituvchi kodini tekshiring.",
+        errorNameTaken: "Bu ismli o'quvchi allaqachon xonada mavjud!",
+
+        waitingHostTitle: "Siz o'yindasiz!",
+        waitingHostText: "O'qituvchi o'yinni boshlashini kutmoqdamiz...",
+        readyToCompete: "⚡ Tez javob bering — qanchalik tez javob bersangiz, shuncha ko'p ball olasiz!",
+        secondsShort: "s",
+        answeredFormat: "Javob berdi: {answered} / {total}",
+        scoreFormat: "Ball: {score}",
+        questionProgressFormat: "{total} tadan {current}-savol",
+        skipTimerBtn: "Vaqtni muddatidan oldin yakunlash",
+
+        correct: "To'g'ri!",
+        wrong: "Noto'g'ri!",
+        timeout: "Vaqt tugadi!",
+        pointsEarned: "+{pts} ball",
+        pointsZero: "0 ball",
+        currentRankFormat: "Hozirgi o'rningiz: #{rank}",
+        waitingTeacherNext: "O'qituvchidan keyingi savolni kutmoqdamiz...",
+
+        roundResultsTitle: "Raund natijalari",
+        correctAnswerWas: "To'g'ri javob:",
+        distributionTitle: "O'quvchilar qanday javob berdi:",
+        currentStandingsTitle: "Joriy reyting:",
+        nextQuestionBtn: "Keyingi savol",
+        goToFinalBtn: "Yakuniy natijalarga o'tish",
+
+        gameOverTitle: "O'yin tugadi!",
+        topPlayersTitle: "«Quiz Zone» viktorinasi g'oliblari",
+        playAgainBtn: "Bosh sahifaga qaytish",
+        yourFinalResult: "Sizning yakuniy o'rningiz: #{rank} (Ball: {score})",
+
+        multiDeviceTitle: "Haqiqiy smartfonlarda qanday o'ynash mumkin?",
+        multiDeviceText: "O'yin umumiy bulutli xotiraga ulangan! O'quvchilar istalgan smartfondan 6 xonali PIN kiritib, birgalikda real vaqtda o'ynashlari mumkin.",
+        ptsUnit: "ball",
+        soundOn: "Ovoz yoqilgan",
+        soundOff: "Ovoz o'chirilgan",
+        confirmLeave: "Bosh sahifaga qaytishni xohlaysizmi?",
+        nameInputPlaceholder: "Ismingiz...",
+        shareLinkPrefix: "Telefonlar uchun:",
+        copyLinkBtn: "Kirish havolasini nusxalash",
+        linkCopiedToast: "Havola nusxalandi! O'quvchilarga yuboring",
+        dbModalTitle: "Ma'lumotlar bazasi sozlamalari (Onlayn)",
+        dbModalDesc: "Turli telefon va kompyuterlardan internet orqali o'ynash uchun bepul Firebase Realtime Database bulutidan foydalaniladi.",
+        dbStatusLabel: "Joriy holat:",
+        howToSetupFirebase: "Firebase-ni 2 daqiqada ulash yo'riqnomasi (bepul):",
+        pasteConfigLabel: "firebaseConfig obyekti yoki JSON ni kiriting:",
+        testConnBtn: "Ulanishni tekshirish",
+        saveSettingsBtn: "Saqlash va ulanish",
+        dbConnectedMsg: "Ma'lumotlar bazasiga muvaffaqiyatli ulandi!",
+        dbConnFailedMsg: "Bazaga ulanib bo'lmadi. Firebase sozlamalarini tekshiring.",
+        dbSavedToast: "Baza sozlamalari saqlandi!",
+        errorGameAlreadyStarted: "Bu xonada o'yin allaqachon boshlangan!",
+        errorClosedByHost: "O'qituvchi o'yinni yakunladi.",
+        dbNoticeBanner: "Boshqa telefonlardan kirish uchun Firebase bazasini sozlang (yuqoridagi ☁️ tugmasini bosing)"
+      }
+    };
+
+    /* =========================================================
+       2. QUESTIONS DATA (8 COUNTRIES WITH INLINE SVG FLAGS)
+       ========================================================= */
+    const questionsData = [
+      {
+        id: 'fr',
+        svg: `<svg viewBox="0 0 300 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="200" fill="#002395"/>
+          <rect x="100" width="100" height="200" fill="#ffffff"/>
+          <rect x="200" width="100" height="200" fill="#ed2939"/>
+        </svg>`,
+        correctIndex: 0,
+        options: [
+          { ru: 'Франция', uz: 'Fransiya' },
+          { ru: 'Нидерланды', uz: 'Niderlandiya' },
+          { ru: 'Испания', uz: 'Ispaniya' },
+          { ru: 'Великобритания', uz: 'Buyuk Britaniya' }
+        ]
+      },
+      {
+        id: 'it',
+        svg: `<svg viewBox="0 0 300 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <rect width="100" height="200" fill="#009246"/>
+          <rect x="100" width="100" height="200" fill="#ffffff"/>
+          <rect x="200" width="100" height="200" fill="#ce2b37"/>
+        </svg>`,
+        correctIndex: 2,
+        options: [
+          { ru: 'Мексика', uz: 'Meksika' },
+          { ru: 'Греция', uz: 'Gretsiya' },
+          { ru: 'Италия', uz: 'Italiya' },
+          { ru: 'Португалия', uz: 'Portugaliya' }
+        ]
+      },
+      {
+        id: 'de',
+        svg: `<svg viewBox="0 0 300 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <rect width="300" height="66.67" fill="#000000"/>
+          <rect y="66.67" width="300" height="66.67" fill="#dd0000"/>
+          <rect y="133.34" width="300" height="66.67" fill="#ffce00"/>
+        </svg>`,
+        correctIndex: 1,
+        options: [
+          { ru: 'Австрия', uz: 'Avstriya' },
+          { ru: 'Германия', uz: 'Germaniya' },
+          { ru: 'Бельгия', uz: 'Belgiya' },
+          { ru: 'Швейцария', uz: 'Shveytsariya' }
+        ]
+      },
+      {
+        id: 'jp',
+        svg: `<svg viewBox="0 0 300 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <rect width="300" height="200" fill="#ffffff"/>
+          <circle cx="150" cy="100" r="58" fill="#bc002d"/>
+        </svg>`,
+        correctIndex: 3,
+        options: [
+          { ru: 'Южная Корея', uz: 'Janubiy Koreya' },
+          { ru: 'Китай', uz: 'Xitoy' },
+          { ru: 'Вьетнам', uz: 'Vyetnam' },
+          { ru: 'Япония', uz: 'Yaponiya' }
+        ]
+      },
+      {
+        id: 'br',
+        svg: `<svg viewBox="0 0 300 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <rect width="300" height="200" fill="#009739"/>
+          <polygon points="150,22 280,100 150,178 20,100" fill="#fedf01"/>
+          <circle cx="150" cy="100" r="46" fill="#002776"/>
+          <path d="M 106 108 Q 150 84 194 95" stroke="#ffffff" stroke-width="4.5" fill="none"/>
+        </svg>`,
+        correctIndex: 0,
+        options: [
+          { ru: 'Бразилия', uz: 'Braziliya' },
+          { ru: 'Аргентина', uz: 'Argentina' },
+          { ru: 'Колумбия', uz: 'Kolumbiya' },
+          { ru: 'Чили', uz: 'Chili' }
+        ]
+      },
+      {
+        id: 'us',
+        svg: `<svg viewBox="0 0 300 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <polygon id="us-star" points="0,-3.5 1.03,-1.08 3.33,-1.08 1.48,0.44 2.17,2.83 0,1.31 -2.17,2.83 -1.48,0.44 -3.33,-1.08 -1.03,-1.08" fill="#ffffff"/>
+          </defs>
+          <rect width="300" height="200" fill="#ffffff"/>
+          <rect y="0" width="300" height="15.38" fill="#b22234"/>
+          <rect y="30.77" width="300" height="15.38" fill="#b22234"/>
+          <rect y="61.54" width="300" height="15.38" fill="#b22234"/>
+          <rect y="92.31" width="300" height="15.38" fill="#b22234"/>
+          <rect y="123.08" width="300" height="15.38" fill="#b22234"/>
+          <rect y="153.85" width="300" height="15.38" fill="#b22234"/>
+          <rect y="184.62" width="300" height="15.38" fill="#b22234"/>
+          <rect width="125" height="107.69" fill="#3c3b6e"/>
+          <use href="#us-star" x="20" y="18"/><use href="#us-star" x="42" y="18"/><use href="#us-star" x="64" y="18"/><use href="#us-star" x="86" y="18"/><use href="#us-star" x="108" y="18"/>
+          <use href="#us-star" x="31" y="36"/><use href="#us-star" x="53" y="36"/><use href="#us-star" x="75" y="36"/><use href="#us-star" x="97" y="36"/>
+          <use href="#us-star" x="20" y="54"/><use href="#us-star" x="42" y="54"/><use href="#us-star" x="64" y="54"/><use href="#us-star" x="86" y="54"/><use href="#us-star" x="108" y="54"/>
+          <use href="#us-star" x="31" y="72"/><use href="#us-star" x="53" y="72"/><use href="#us-star" x="75" y="72"/><use href="#us-star" x="97" y="72"/>
+          <use href="#us-star" x="20" y="90"/><use href="#us-star" x="42" y="90"/><use href="#us-star" x="64" y="90"/><use href="#us-star" x="86" y="90"/><use href="#us-star" x="108" y="90"/>
+        </svg>`,
+        correctIndex: 3,
+        options: [
+          { ru: 'Канада', uz: 'Kanada' },
+          { ru: 'Великобритания', uz: 'Buyuk Britaniya' },
+          { ru: 'Австралия', uz: 'Avstraliya' },
+          { ru: 'США', uz: 'AQSH' }
+        ]
+      },
+      {
+        id: 'uz',
+        svg: `<svg viewBox="0 0 300 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <polygon id="uz-star" points="0,-2.5 0.74,-0.77 2.38,-0.77 1.05,0.31 1.55,2.02 0,0.93 -1.55,2.02 -1.05,0.31 -2.38,-0.77 -0.74,-0.77" fill="#ffffff"/>
+          </defs>
+          <rect width="300" height="62" fill="#0099b5"/>
+          <rect y="62" width="300" height="5" fill="#ce1126"/>
+          <rect y="67" width="300" height="66" fill="#ffffff"/>
+          <rect y="133" width="300" height="5" fill="#ce1126"/>
+          <rect y="138" width="300" height="62" fill="#1eb53a"/>
+          <circle cx="45" cy="31" r="18" fill="#ffffff"/>
+          <circle cx="51" cy="31" r="15" fill="#0099b5"/>
+          <use href="#uz-star" x="90" y="17"/>
+          <use href="#uz-star" x="105" y="17"/>
+          <use href="#uz-star" x="120" y="17"/>
+          <use href="#uz-star" x="75" y="31"/>
+          <use href="#uz-star" x="90" y="31"/>
+          <use href="#uz-star" x="105" y="31"/>
+          <use href="#uz-star" x="120" y="31"/>
+          <use href="#uz-star" x="60" y="45"/>
+          <use href="#uz-star" x="75" y="45"/>
+          <use href="#uz-star" x="90" y="45"/>
+          <use href="#uz-star" x="105" y="45"/>
+          <use href="#uz-star" x="120" y="45"/>
+        </svg>`,
+        correctIndex: 1,
+        options: [
+          { ru: 'Казахстан', uz: "Qozog'iston" },
+          { ru: 'Узбекистан', uz: "O'zbekiston" },
+          { ru: 'Таджикистан', uz: 'Tojikiston' },
+          { ru: 'Туркменистан', uz: 'Turkmaniston' }
+        ]
+      },
+      {
+        id: 'tr',
+        svg: `<svg viewBox="0 0 300 200" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+          <rect width="300" height="200" fill="#e30a17"/>
+          <circle cx="115" cy="100" r="50" fill="#ffffff"/>
+          <circle cx="127" cy="100" r="40" fill="#e30a17"/>
+          <polygon points="172,83 177,95 189,95 180,103 183,115 172,107 161,115 164,103 155,95 167,95" fill="#ffffff"/>
+        </svg>`,
+        correctIndex: 2,
+        options: [
+          { ru: 'Азербайджан', uz: 'Ozarbayjon' },
+          { ru: 'Тунис', uz: 'Tunis' },
+          { ru: 'Турция', uz: 'Turkiya' },
+          { ru: 'Египет', uz: 'Misr' }
+        ]
+      }
+    ];
+
+    const AVATARS = ['🦊', '🐯', '🐼', '🦁', '🦄', '🚀', '🌟', '⚡', '🦉', '🐬'];
+
+    /* =========================================================
+       3. APPLICATION STATE
+       ========================================================= */
+    let currentLang = localStorage.getItem('quiz_zone_lang') || 'ru';
+    if (currentLang !== 'ru' && currentLang !== 'uz') currentLang = 'ru';
+
+    let soundEnabled = localStorage.getItem('quiz_zone_sound') !== 'false';
+    let role = null; // 'teacher' | 'student' | null
+
+    // Teacher state
+    let roomPin = null;
+    let teacherStudents = []; // Array of { id, name, avatar, score, streak, lastAnswer: null }
+    let currentQuestionIndex = 0;
+    let timerInterval = null;
+    let timeLeft = 20;
+    let questionAnswers = []; // Records for current question: { studentId, choice, isCorrect, points }
+
+    // Student state
+    let myStudentId = 'std_' + Math.random().toString(36).substring(2, 9);
+    let myStudentName = '';
+    let myStudentAvatar = '🦊';
+    let myScore = 0;
+    let myCurrentRank = 1;
+    let hasAnsweredCurrent = false;
+
+    /* =========================================================
+       FIREBASE CONFIGURATION
+       =========================================================
+       Вставьте сюда ваши данные из Firebase Console:
+       (Project Settings -> General -> Web App -> firebaseConfig)
+    */
+    let FIREBASE_CONFIG = {
+      apiKey: "",
+      authDomain: "",
+      databaseURL: "",
+      projectId: "",
+      storageBucket: "",
+      messagingSenderId: "",
+      appId: ""
+    };
+
+    /* =========================================================
+       4. UNIVERSAL SHARED STORAGE BACKEND (FIREBASE + REST + LOCAL)
+       ========================================================= */
+    const QuizBackend = {
+      mode: 'none', // 'firebase' | 'rest' | 'local'
+      db: null,
+      activeUnsubscribe: null,
+      pollInterval: null,
+
+      async init() {
+        // Check for config saved in localStorage
+        try {
+          const saved = localStorage.getItem('quiz_zone_firebase_config');
+          if (saved) {
+            const parsed = JSON.parse(saved);
+            if (parsed && (parsed.databaseURL || parsed.projectId)) {
+              FIREBASE_CONFIG = { ...FIREBASE_CONFIG, ...parsed };
+            }
+          }
+        } catch (e) {}
+
+        // 1. Try Firebase if databaseURL is provided
+        if (FIREBASE_CONFIG && FIREBASE_CONFIG.databaseURL && typeof firebase !== 'undefined') {
+          try {
+            if (!firebase.apps.length) {
+              firebase.initializeApp(FIREBASE_CONFIG);
+            }
+            this.db = firebase.database();
+            this.mode = 'firebase';
+            updateDbStatusUI('connected', 'Firebase Online');
+            return true;
+          } catch (err) {
+            console.error('Firebase initialization error:', err);
+          }
+        }
+
+        // 2. Try REST backend if served over HTTP/HTTPS
+        if (window.location.protocol.startsWith('http')) {
+          try {
+            const res = await fetch('/api/health', { signal: AbortSignal.timeout(1000) });
+            if (res.ok) {
+              this.mode = 'rest';
+              updateDbStatusUI('connected', 'Local Server');
+              return true;
+            }
+          } catch (e) {}
+        }
+
+        // 3. Fallback to local mode
+        this.mode = 'local';
+        updateDbStatusUI('disconnected', 'Локальный режим (настройте Firebase)');
+        return false;
+      },
+
+      async getRoom(pin) {
+        if (!pin) return null;
+        try {
+          if (this.mode === 'firebase' && this.db) {
+            const snap = await this.db.ref('rooms/' + pin).once('value');
+            return snap.exists() ? snap.val() : null;
+          } else if (this.mode === 'rest') {
+            const res = await fetch('/api/rooms/' + encodeURIComponent(pin));
+            if (res.status === 404) return null;
+            if (!res.ok) throw new Error('Failed to fetch room');
+            return await res.json();
+          } else {
+            const raw = localStorage.getItem('quiz_zone_room_' + pin);
+            return raw ? JSON.parse(raw) : null;
+          }
+        } catch (err) {
+          console.error('QuizBackend.getRoom error:', err);
+          throw err;
+        }
+      },
+
+      async createRoom(pin, roomData) {
+        try {
+          if (this.mode === 'firebase' && this.db) {
+            await this.db.ref('rooms/' + pin).set(roomData);
+          } else if (this.mode === 'rest') {
+            const res = await fetch('/api/rooms', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(roomData)
+            });
+            if (!res.ok) throw new Error('Failed to create room on server');
+          } else {
+            localStorage.setItem('quiz_zone_room_' + pin, JSON.stringify(roomData));
+            broadcastLocalEvent('ROOM_CREATED', pin, roomData);
+          }
+        } catch (err) {
+          console.error('QuizBackend.createRoom error:', err);
+          throw err;
+        }
+      },
+
+      async updateRoom(pin, updates) {
+        try {
+          if (this.mode === 'firebase' && this.db) {
+            await this.db.ref('rooms/' + pin).update(updates);
+          } else if (this.mode === 'rest') {
+            await fetch('/api/rooms/' + encodeURIComponent(pin), {
+              method: 'PATCH',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updates)
+            });
+          } else {
+            const cur = await this.getRoom(pin) || {};
+            const next = { ...cur, ...updates };
+            localStorage.setItem('quiz_zone_room_' + pin, JSON.stringify(next));
+            broadcastLocalEvent('ROOM_UPDATE', pin, next);
+          }
+        } catch (err) {
+          console.error('QuizBackend.updateRoom error:', err);
+          throw err;
+        }
+      },
+
+      async joinStudent(pin, student) {
+        try {
+          if (this.mode === 'firebase' && this.db) {
+            await this.db.ref(`rooms/${pin}/students/${student.id}`).set(student);
+          } else if (this.mode === 'rest') {
+            const res = await fetch(`/api/rooms/${encodeURIComponent(pin)}/students`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(student)
+            });
+            if (!res.ok) throw new Error('Join failed');
+          } else {
+            const cur = await this.getRoom(pin) || {};
+            cur.students = cur.students || {};
+            cur.students[student.id] = student;
+            localStorage.setItem('quiz_zone_room_' + pin, JSON.stringify(cur));
+            broadcastLocalEvent('STUDENT_JOIN', pin, cur);
+          }
+        } catch (err) {
+          console.error('QuizBackend.joinStudent error:', err);
+          throw err;
+        }
+      },
+
+      async submitAnswer(pin, studentId, answerData) {
+        try {
+          if (this.mode === 'firebase' && this.db) {
+            const qIndex = answerData.questionIndex;
+            const updates = {};
+            updates[`rooms/${pin}/answers/${qIndex}/${studentId}`] = answerData;
+            updates[`rooms/${pin}/students/${studentId}/lastAnswer`] = answerData.choiceIndex;
+            await this.db.ref().update(updates);
+          } else if (this.mode === 'rest') {
+            await fetch(`/api/rooms/${encodeURIComponent(pin)}/answers`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ studentId, answerData })
+            });
+          } else {
+            const cur = await this.getRoom(pin) || {};
+            cur.answers = cur.answers || {};
+            cur.answers[answerData.questionIndex] = cur.answers[answerData.questionIndex] || {};
+            cur.answers[answerData.questionIndex][studentId] = answerData;
+            if (cur.students && cur.students[studentId]) {
+              cur.students[studentId].lastAnswer = answerData.choiceIndex;
+            }
+            localStorage.setItem('quiz_zone_room_' + pin, JSON.stringify(cur));
+            broadcastLocalEvent('STUDENT_ANSWER', pin, cur);
+          }
+        } catch (err) {
+          console.error('QuizBackend.submitAnswer error:', err);
+          throw err;
+        }
+      },
+
+      async updateStudentScore(pin, studentId, points, isCorrect) {
+        try {
+          if (this.mode === 'firebase' && this.db) {
+            const studentRef = this.db.ref(`rooms/${pin}/students/${studentId}`);
+            await studentRef.transaction((student) => {
+              if (student) {
+                student.score = (student.score || 0) + points;
+                student.streak = isCorrect ? ((student.streak || 0) + 1) : 0;
+              }
+              return student;
+            });
+          } else if (this.mode === 'rest') {
+            await fetch(`/api/rooms/${encodeURIComponent(pin)}/students/${encodeURIComponent(studentId)}/score`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ points, isCorrect })
+            });
+          } else {
+            const cur = await this.getRoom(pin) || {};
+            if (cur.students && cur.students[studentId]) {
+              cur.students[studentId].score = (cur.students[studentId].score || 0) + points;
+              cur.students[studentId].streak = isCorrect ? ((cur.students[studentId].streak || 0) + 1) : 0;
+              localStorage.setItem('quiz_zone_room_' + pin, JSON.stringify(cur));
+              broadcastLocalEvent('SCORE_UPDATE', pin, cur);
+            }
+          }
+        } catch (err) {
+          console.error('QuizBackend.updateStudentScore error:', err);
+        }
+      },
+
+      async closeRoom(pin) {
+        try {
+          if (this.mode === 'firebase' && this.db) {
+            await this.db.ref('rooms/' + pin).update({ status: 'CLOSED' });
+            setTimeout(() => {
+              try { this.db.ref('rooms/' + pin).remove(); } catch(e) {}
+            }, 3000);
+          } else if (this.mode === 'rest') {
+            await fetch(`/api/rooms/${encodeURIComponent(pin)}`, { method: 'DELETE' });
+          } else {
+            localStorage.removeItem('quiz_zone_room_' + pin);
+            broadcastLocalEvent('ROOM_CLOSED', pin, { status: 'CLOSED' });
+          }
+        } catch (err) {
+          console.error('QuizBackend.closeRoom error:', err);
+        }
+      },
+
+      subscribe(pin, onUpdate) {
+        this.unsubscribe();
+        if (!pin) return;
+
+        if (this.mode === 'firebase' && this.db) {
+          const ref = this.db.ref('rooms/' + pin);
+          const listener = (snapshot) => {
+            const val = snapshot.val();
+            onUpdate(val);
+          };
+          ref.on('value', listener);
+          this.activeUnsubscribe = () => ref.off('value', listener);
+        } else if (this.mode === 'rest') {
+          let running = true;
+          const poll = async () => {
+            if (!running) return;
+            try {
+              const data = await this.getRoom(pin);
+              if (running) onUpdate(data);
+            } catch (e) {}
+          };
+          poll();
+          this.pollInterval = setInterval(poll, 1200);
+          this.activeUnsubscribe = () => {
+            running = false;
+            clearInterval(this.pollInterval);
+          };
+        } else {
+          // Local fallback: listen to custom events and storage
+          const listener = async (e) => {
+            if (e && e.detail && e.detail.pin === pin) {
+              onUpdate(e.detail.room);
+            } else {
+              const data = await this.getRoom(pin);
+              onUpdate(data);
+            }
+          };
+          window.addEventListener('quiz_local_bus', listener);
+          window.addEventListener('storage', listener);
+          this.activeUnsubscribe = () => {
+            window.removeEventListener('quiz_local_bus', listener);
+            window.removeEventListener('storage', listener);
+          };
+        }
+      },
+
+      unsubscribe() {
+        if (this.activeUnsubscribe) {
+          try { this.activeUnsubscribe(); } catch (e) {}
+          this.activeUnsubscribe = null;
+        }
+        if (this.pollInterval) {
+          clearInterval(this.pollInterval);
+          this.pollInterval = null;
+        }
+      }
+    };
+
+    function broadcastLocalEvent(type, pin, room) {
+      try {
+        const ev = new CustomEvent('quiz_local_bus', { detail: { type, pin, room } });
+        window.dispatchEvent(ev);
+        localStorage.setItem('quiz_zone_sync_nonce', Date.now().toString());
+      } catch (e) {}
+    }
+
+    /* =========================================================
+       5. AUDIO SYNTHESIS ENGINE (ZERO EXTERNAL SOUND ASSETS)
+       ========================================================= */
+    let audioCtx = null;
+
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (AudioContext) {
+          audioCtx = new AudioContext();
+        }
+      }
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playTone(freq, type, duration, startTime = 0, gainVal = 0.15) {
+      if (!soundEnabled) return;
+      const ctx = getAudioContext();
+      if (!ctx) return;
+
+      try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime + startTime);
+
+        gain.gain.setValueAtTime(gainVal, ctx.currentTime + startTime);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(ctx.currentTime + startTime);
+        osc.stop(ctx.currentTime + startTime + duration);
+      } catch (e) {}
+    }
+
+    function soundClick() {
+      playTone(600, 'sine', 0.08, 0, 0.1);
+    }
+
+    function soundTick() {
+      playTone(850, 'triangle', 0.04, 0, 0.08);
+    }
+
+    function soundCorrect() {
+      playTone(523.25, 'sine', 0.15, 0.0, 0.2); // C5
+      playTone(659.25, 'sine', 0.15, 0.1, 0.2); // E5
+      playTone(783.99, 'sine', 0.18, 0.2, 0.25); // G5
+      playTone(1046.50, 'triangle', 0.35, 0.3, 0.3); // C6
+    }
+
+    function soundWrong() {
+      playTone(320, 'sawtooth', 0.18, 0.0, 0.2);
+      playTone(240, 'sawtooth', 0.28, 0.15, 0.25);
+    }
+
+    function soundStart() {
+      playTone(440, 'triangle', 0.12, 0.0, 0.15);
+      playTone(554.37, 'triangle', 0.12, 0.1, 0.15);
+      playTone(659.25, 'triangle', 0.25, 0.2, 0.25);
+    }
+
+    function soundFanfare() {
+      const notes = [523, 659, 783, 1046, 783, 1046];
+      notes.forEach((f, idx) => {
+        playTone(f, 'triangle', 0.2, idx * 0.14, 0.25);
+      });
+    }
+
+    function toggleSound() {
+      soundEnabled = !soundEnabled;
+      localStorage.setItem('quiz_zone_sound', soundEnabled ? 'true' : 'false');
+      updateSoundButtonUI();
+      if (soundEnabled) soundClick();
+    }
+
+    function updateSoundButtonUI() {
+      const btn = document.getElementById('soundToggleBtn');
+      if (btn) {
+        btn.textContent = soundEnabled ? '🔊' : '🔇';
+        btn.title = soundEnabled ? (translations[currentLang]?.soundOn || 'Звук включён') : (translations[currentLang]?.soundOff || 'Звук выключен');
+      }
+    }
+
+    /* =========================================================
+       6. LOCALIZATION & UI TRANSLATION
+       ========================================================= */
+    let lastStudentFeedbackState = null;
+    let lastFinalRankings = null;
+
+    function toggleLanguage() {
+      currentLang = (currentLang === 'ru') ? 'uz' : 'ru';
+      localStorage.setItem('quiz_zone_lang', currentLang);
+      soundClick();
+      applyLanguage(currentLang);
+    }
+
+    function applyLanguage(lang) {
+      document.documentElement.lang = lang;
+
+      // Update switcher active pill
+      const optRu = document.getElementById('langOptRu');
+      const optUz = document.getElementById('langOptUz');
+      if (optRu && optUz) {
+        if (lang === 'ru') {
+          optRu.classList.add('active');
+          optUz.classList.remove('active');
+        } else {
+          optUz.classList.add('active');
+          optRu.classList.remove('active');
+        }
+      }
+
+      // Update all elements with data-i18n
+      const elements = document.querySelectorAll('[data-i18n]');
+      elements.forEach((el) => {
+        const key = el.getAttribute('data-i18n');
+        if (translations[lang] && translations[lang][key]) {
+          el.textContent = translations[lang][key];
+        }
+      });
+
+      // Update placeholder attributes
+      const placeholderElements = document.querySelectorAll('[data-i18n-placeholder]');
+      placeholderElements.forEach((el) => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (translations[lang] && translations[lang][key]) {
+          el.setAttribute('placeholder', translations[lang][key]);
+        }
+      });
+
+      // Update title/tooltip attributes
+      const titleElements = document.querySelectorAll('[data-i18n-title]');
+      titleElements.forEach((el) => {
+        const key = el.getAttribute('data-i18n-title');
+        if (translations[lang] && translations[lang][key]) {
+          el.setAttribute('title', translations[lang][key]);
+        }
+      });
+
+      updateSoundButtonUI();
+
+      // Update dynamic parts if currently inside an active screen
+      if (role === 'teacher') {
+        updateTeacherQuestionDisplay();
+        updateTeacherMiniLeaderboard();
+        if (document.getElementById('screenTeacherRound')?.classList.contains('active')) {
+          showTeacherRoundResults();
+        }
+      } else if (role === 'student') {
+        updateStudentQuestionDisplay();
+        if (document.getElementById('screenStudentFeedback')?.classList.contains('active') && lastStudentFeedbackState) {
+          showStudentFeedback(lastStudentFeedbackState.isCorrect, lastStudentFeedbackState.points, lastStudentFeedbackState.isTimeout);
+        }
+      }
+
+      if (document.getElementById('screenFinal')?.classList.contains('active') && lastFinalRankings) {
+        renderPodiumAndLeaderboard(lastFinalRankings);
+        if (role === 'student') {
+          const me = lastFinalRankings.find((s) => s.id === myStudentId);
+          const personalText = document.getElementById('studentPersonalResultText');
+          if (me && personalText) {
+            personalText.textContent = translations[currentLang].yourFinalResult
+              .replace('{rank}', me.rank)
+              .replace('{score}', me.score);
+          }
+        }
+      }
+    }
+
+    /* =========================================================
+       7. SCREEN ROUTING
+       ========================================================= */
+    function showScreen(screenId) {
+      const screens = document.querySelectorAll('.screen');
+      screens.forEach((s) => s.classList.remove('active'));
+
+      const target = document.getElementById(screenId);
+      if (target) {
+        target.classList.add('active');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    function handleLogoClick() {
+      if (!role) {
+        showScreen('screenHome');
+      } else {
+        const confirmMsg = translations[currentLang]?.confirmLeave || 'Выйти в главное меню?';
+        if (confirm(confirmMsg)) {
+          leaveToHome();
+        }
+      }
+    }
+
+    async function leaveToHome() {
+      if (timerInterval) clearInterval(timerInterval);
+
+      if (role === 'teacher' && roomPin) {
+        try {
+          await QuizBackend.closeRoom(roomPin);
+        } catch (e) {}
+      }
+
+      QuizBackend.unsubscribe();
+
+      role = null;
+      roomPin = null;
+      teacherStudents = [];
+      questionAnswers = [];
+      hasAnsweredCurrent = false;
+      stopConfetti();
+
+      showScreen('screenHome');
+    }
+
+    /* =========================================================
+       8. TEACHER WORKFLOW
+       ========================================================= */
+    let lastStudentCount = 0;
+
+    async function startAsTeacher() {
+      soundClick();
+      role = 'teacher';
+      teacherStudents = [];
+      questionAnswers = [];
+      currentQuestionIndex = 0;
+      lastStudentCount = 0;
+
+      if (QuizBackend.mode === 'local') {
+        showToast(translations[currentLang].dbNoticeBanner || "Внимание: настройте Firebase для подключения телефонов");
+      }
+
+      try {
+        // Generate unique 6-digit PIN by verifying against shared database
+        let uniquePin = null;
+        for (let i = 0; i < 10; i++) {
+          const candidate = Math.floor(100000 + Math.random() * 900000).toString();
+          const existing = await QuizBackend.getRoom(candidate);
+          if (!existing || existing.status === 'CLOSED') {
+            uniquePin = candidate;
+            break;
+          }
+        }
+        if (!uniquePin) {
+          uniquePin = Math.floor(100000 + Math.random() * 900000).toString();
+        }
+        roomPin = uniquePin;
+
+        const roomData = {
+          pin: roomPin,
+          createdAt: Date.now(),
+          status: 'LOBBY',
+          currentQuestionIndex: 0,
+          questionDuration: 20,
+          questionStartedAt: null,
+          correctIndex: null,
+          students: {},
+          answers: {},
+          leaderboard: []
+        };
+
+        await QuizBackend.createRoom(roomPin, roomData);
+
+        // Update UI
+        document.getElementById('pinValue').textContent = roomPin;
+        renderTeacherLobbyStudents();
+
+        // Subscribe to real-time updates for this room
+        QuizBackend.subscribe(roomPin, (room) => {
+          if (!room) return;
+          handleTeacherRoomSync(room);
+        });
+
+        showScreen('screenTeacherLobby');
+      } catch (err) {
+        console.error('Error starting room as teacher:', err);
+        alert('Ошибка создания комнаты: ' + (err.message || 'Проверьте соединение с базой'));
+      }
+    }
+
+    function copyPinToClipboard() {
+      if (!roomPin) return;
+      soundClick();
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(roomPin);
+      }
+      showToast(translations[currentLang].copiedToast);
+    }
+
+    function copyJoinLinkToClipboard() {
+      if (!roomPin) return;
+      soundClick();
+      const currentUrl = window.location.href.split('?')[0].split('#')[0];
+      const link = currentUrl + '?joinPin=' + encodeURIComponent(roomPin);
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(link);
+      }
+      showToast(translations[currentLang].linkCopiedToast || "Ссылка скопирована!");
+    }
+
+    function openStudentTabTest() {
+      soundClick();
+      const currentUrl = window.location.href.split('?')[0].split('#')[0];
+      const testUrl = currentUrl + '?joinPin=' + encodeURIComponent(roomPin);
+      window.open(testUrl, '_blank');
+    }
+
+    function renderTeacherLobbyStudents() {
+      const grid = document.getElementById('lobbyStudentsGrid');
+      const emptyNotice = document.getElementById('emptyStudentsNotice');
+      const countBadge = document.getElementById('lobbyStudentCount');
+      const startBtn = document.getElementById('btnStartGame');
+
+      if (!grid) return;
+      grid.innerHTML = '';
+      countBadge.textContent = teacherStudents.length;
+
+      if (teacherStudents.length === 0) {
+        emptyNotice.style.display = 'flex';
+        startBtn.disabled = true;
+      } else {
+        emptyNotice.style.display = 'none';
+        startBtn.disabled = false;
+
+        teacherStudents.forEach((student) => {
+          const chip = document.createElement('div');
+          chip.className = 'student-chip';
+          chip.innerHTML = `
+            <div class="avatar">${student.avatar}</div>
+            <div class="name" title="${escapeHtml(student.name)}">${escapeHtml(student.name)}</div>
+          `;
+          grid.appendChild(chip);
+        });
+      }
+    }
+
+    function handleTeacherRoomSync(room) {
+      if (!room || role !== 'teacher') return;
+
+      // 1. Sync students list in real-time
+      const studentsMap = room.students || {};
+      const studentList = Object.values(studentsMap);
+
+      if (studentList.length > lastStudentCount) {
+        soundClick();
+      }
+      lastStudentCount = studentList.length;
+      teacherStudents = studentList;
+
+      if (document.getElementById('screenTeacherLobby')?.classList.contains('active')) {
+        renderTeacherLobbyStudents();
+      }
+
+      // 2. In active Question: collect answers in real-time
+      if (room.status === 'QUESTION') {
+        const currentAnswersMap = (room.answers && room.answers[currentQuestionIndex]) || {};
+        questionAnswers = Object.values(currentAnswersMap);
+
+        updateTeacherQuestionDisplay();
+
+        // If all students have submitted, wrap up question automatically
+        if (teacherStudents.length > 0 && questionAnswers.length >= teacherStudents.length) {
+          if (timerInterval) clearInterval(timerInterval);
+          setTimeout(() => {
+            teacherQuestionTimeUp();
+          }, 400);
+        }
+      }
+    }
+
+    async function teacherStartGame() {
+      if (teacherStudents.length === 0) {
+        alert(translations[currentLang].needAtLeastOneStudent);
+        return;
+      }
+      soundStart();
+      currentQuestionIndex = 0;
+      await teacherLaunchQuestion(0);
+    }
+
+    async function teacherLaunchQuestion(qIndex) {
+      currentQuestionIndex = qIndex;
+      questionAnswers = [];
+      timeLeft = 20;
+
+      showScreen('screenTeacherGame');
+      updateTeacherQuestionDisplay();
+
+      try {
+        await QuizBackend.updateRoom(roomPin, {
+          status: 'QUESTION',
+          currentQuestionIndex: qIndex,
+          questionDuration: 20,
+          questionStartedAt: Date.now(),
+          correctIndex: null
+        });
+      } catch (err) {
+        console.error('Failed to update question in shared storage:', err);
+      }
+
+      // Start Countdown Timer
+      if (timerInterval) clearInterval(timerInterval);
+      const timerVal = document.getElementById('teacherTimerVal');
+      const timerBar = document.getElementById('teacherTimerBar');
+      const timerBadge = document.getElementById('teacherTimerBadge');
+
+      timerBadge.classList.remove('warning');
+      timerVal.textContent = timeLeft;
+      timerBar.style.width = '100%';
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 5) {
+          timerBadge.classList.add('warning');
+          soundTick();
+        }
+
+        timerVal.textContent = Math.max(0, timeLeft);
+        const pct = (timeLeft / 20) * 100;
+        timerBar.style.width = Math.max(0, pct) + '%';
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          teacherQuestionTimeUp();
+        }
+      }, 1000);
+    }
+
+    function updateTeacherQuestionDisplay() {
+      const q = questionsData[currentQuestionIndex];
+      if (!q) return;
+
+      const qBadge = document.getElementById('teacherQuestionBadge');
+      if (qBadge) {
+        qBadge.textContent = translations[currentLang].questionProgressFormat
+          .replace('{current}', currentQuestionIndex + 1)
+          .replace('{total}', questionsData.length);
+      }
+
+      const answeredBadge = document.getElementById('teacherAnsweredBadge');
+      if (answeredBadge) {
+        answeredBadge.textContent = translations[currentLang].answeredFormat
+          .replace('{answered}', questionAnswers.length)
+          .replace('{total}', teacherStudents.length);
+      }
+
+      const flagContainer = document.getElementById('teacherFlagContainer');
+      if (flagContainer && q.svg) {
+        flagContainer.innerHTML = q.svg;
+      }
+
+      for (let i = 0; i < 4; i++) {
+        const ansEl = document.getElementById('teacherAns' + i);
+        if (ansEl && q.options[i]) {
+          ansEl.textContent = q.options[i][currentLang];
+        }
+      }
+    }
+
+    function teacherForceEndQuestion() {
+      if (timerInterval) clearInterval(timerInterval);
+      teacherQuestionTimeUp();
+    }
+
+    async function teacherQuestionTimeUp() {
+      if (timerInterval) clearInterval(timerInterval);
+
+      const q = questionsData[currentQuestionIndex];
+
+      // Sort students by score descending
+      teacherStudents.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+      const leaderboardData = teacherStudents.map((s, idx) => ({
+        id: s.id,
+        name: s.name,
+        avatar: s.avatar,
+        score: s.score || 0,
+        rank: idx + 1
+      }));
+
+      try {
+        await QuizBackend.updateRoom(roomPin, {
+          status: 'ROUND_RESULTS',
+          correctIndex: q.correctIndex,
+          leaderboard: leaderboardData
+        });
+      } catch (err) {
+        console.error('Failed to update round results in shared storage:', err);
+      }
+
+      // Show Round Results Screen
+      showScreen('screenTeacherRound');
+      showTeacherRoundResults();
+    }
+
+    function showTeacherRoundResults() {
+      const q = questionsData[currentQuestionIndex];
+      const correctCountryText = q.options[q.correctIndex][currentLang];
+      document.getElementById('roundCorrectCountryText').textContent = correctCountryText;
+
+      // Distribution counts
+      const counts = [0, 0, 0, 0];
+      questionAnswers.forEach((a) => {
+        if (a.choiceIndex >= 0 && a.choiceIndex <= 3) {
+          counts[a.choiceIndex]++;
+        }
+      });
+
+      const maxCount = Math.max(1, ...counts);
+      for (let i = 0; i < 4; i++) {
+        document.getElementById('statCount' + i).textContent = counts[i];
+        const pct = Math.max(12, (counts[i] / maxCount) * 100);
+        document.getElementById('statFill' + i).style.height = pct + '%';
+      }
+
+      // Mini Leaderboard
+      updateTeacherMiniLeaderboard();
+
+      // Button Text: "Next Question" or "Go to Finals"
+      const isLast = (currentQuestionIndex + 1 >= questionsData.length);
+      const btnText = document.getElementById('btnNextQuestionText');
+      if (btnText) {
+        btnText.textContent = isLast 
+          ? translations[currentLang].goToFinalBtn 
+          : translations[currentLang].nextQuestionBtn;
+      }
+    }
+
+    function updateTeacherMiniLeaderboard() {
+      const list = document.getElementById('roundMiniLeaderboard');
+      if (!list) return;
+      list.innerHTML = '';
+
+      const ptsWord = translations[currentLang]?.ptsUnit || 'pts';
+      const top5 = teacherStudents.slice(0, 5);
+      top5.forEach((student, idx) => {
+        const row = document.createElement('div');
+        row.className = 'leader-row';
+        row.innerHTML = `
+          <div class="leader-left">
+            <span class="leader-rank rank-${idx + 1}">${idx + 1}</span>
+            <span class="leader-avatar">${student.avatar}</span>
+            <span class="leader-name">${escapeHtml(student.name)}</span>
+          </div>
+          <div class="leader-score">${student.score || 0} ${ptsWord}</div>
+        `;
+        list.appendChild(row);
+      });
+    }
+
+    async function teacherNextQuestion() {
+      soundClick();
+      if (currentQuestionIndex + 1 < questionsData.length) {
+        await teacherLaunchQuestion(currentQuestionIndex + 1);
+      } else {
+        await teacherShowFinalPodium();
+      }
+    }
+
+    async function teacherShowFinalPodium() {
+      soundFanfare();
+      startConfetti();
+
+      teacherStudents.sort((a, b) => (b.score || 0) - (a.score || 0));
+
+      const finalRankings = teacherStudents.map((s, idx) => ({
+        id: s.id,
+        name: s.name,
+        avatar: s.avatar,
+        score: s.score || 0,
+        rank: idx + 1
+      }));
+
+      try {
+        await QuizBackend.updateRoom(roomPin, {
+          status: 'GAME_OVER',
+          leaderboard: finalRankings
+        });
+      } catch (err) {
+        console.error('Failed to update game over in shared storage:', err);
+      }
+
+      renderPodiumAndLeaderboard(finalRankings);
+      showScreen('screenFinal');
+    }
+
+    /* =========================================================
+       9. STUDENT WORKFLOW
+       ========================================================= */
+    function showStudentJoin() {
+      soundClick();
+      role = 'student';
+      renderAvatarSelector();
+
+      // Check URL query parameters for quick auto-fill (e.g. ?joinPin=482915)
+      const urlParams = new URLSearchParams(window.location.search);
+      const joinPinParam = urlParams.get('joinPin');
+      if (joinPinParam) {
+        const pinInput = document.getElementById('studentPinInput');
+        if (pinInput) pinInput.value = joinPinParam;
+      }
+
+      showScreen('screenStudentJoin');
+    }
+
+    function renderAvatarSelector() {
+      const container = document.getElementById('avatarSelector');
+      if (!container) return;
+      container.innerHTML = '';
+
+      AVATARS.forEach((av) => {
+        const btn = document.createElement('div');
+        btn.className = 'avatar-btn' + (av === myStudentAvatar ? ' selected' : '');
+        btn.textContent = av;
+        btn.onclick = () => {
+          myStudentAvatar = av;
+          soundClick();
+          document.querySelectorAll('.avatar-btn').forEach((b) => b.classList.remove('selected'));
+          btn.classList.add('selected');
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function handleStudentJoinSubmit(e) {
+      e.preventDefault();
+      const pinInput = document.getElementById('studentPinInput');
+      const nameInput = document.getElementById('studentNameInput');
+      const errorDiv = document.getElementById('joinErrorMsg');
+
+      const pinVal = pinInput.value.trim();
+      const nameVal = nameInput.value.trim();
+
+      errorDiv.style.display = 'none';
+
+      if (!pinVal) {
+        showStudentJoinError(translations[currentLang].errorEmptyPin);
+        return;
+      }
+      if (pinVal.length !== 6 || !/^\d{6}$/.test(pinVal)) {
+        showStudentJoinError(translations[currentLang].errorInvalidPinFormat);
+        return;
+      }
+      if (!nameVal) {
+        showStudentJoinError(translations[currentLang].errorEmptyName);
+        return;
+      }
+
+      // Check if room exists in localStorage
+      const roomRaw = localStorage.getItem('quiz_zone_room_' + pinVal);
+      if (!roomRaw) {
+        showStudentJoinError(translations[currentLang].errorRoomNotFound);
+        return;
+      }
+
+      soundClick();
+      roomPin = pinVal;
+      myStudentName = nameVal;
+
+      // Request join via Sync Bus
+      sendSyncMessage({
+        type: 'STUDENT_JOIN_REQUEST',
+        pin: roomPin,
+        studentId: myStudentId,
+        studentName: myStudentName,
+        studentAvatar: myStudentAvatar
+      });
+
+      // Update student waiting screen elements
+      document.getElementById('waitingStudentName').textContent = myStudentName;
+      document.getElementById('waitingStudentAvatar').textContent = myStudentAvatar;
+      document.getElementById('studentRadarAvatar').textContent = myStudentAvatar;
+      document.getElementById('studentWaitingPinBadge').textContent = roomPin;
+
+      showScreen('screenStudentWaiting');
+    }
+
+    function showStudentJoinError(msg) {
+      const errorDiv = document.getElementById('joinErrorMsg');
+      errorDiv.textContent = msg;
+      errorDiv.style.display = 'block';
+      soundWrong();
+    }
+
+    function handleStudentAccepted(msg) {
+      console.log('Student accepted into room', msg);
+    }
+
+    function handleStudentGameStart(msg) {
+      soundStart();
+      myScore = 0;
+      hasAnsweredCurrent = false;
+    }
+
+    function handleStudentQuestionStart(msg) {
+      currentQuestionIndex = msg.questionIndex;
+      hasAnsweredCurrent = false;
+      timeLeft = msg.duration || 20;
+
+      showScreen('screenStudentGame');
+      updateStudentQuestionDisplay();
+
+      // Reset Answer Buttons UI
+      for (let i = 0; i < 4; i++) {
+        const btn = document.getElementById('studentAnsBtn' + i);
+        if (btn) {
+          btn.disabled = false;
+          btn.classList.remove('selected-choice', 'dimmed');
+        }
+      }
+
+      // Start countdown timer
+      if (timerInterval) clearInterval(timerInterval);
+      const timerVal = document.getElementById('studentTimerVal');
+      const timerBar = document.getElementById('studentTimerBar');
+      const timerBadge = document.getElementById('studentTimerBadge');
+
+      timerBadge.classList.remove('warning');
+      timerVal.textContent = timeLeft;
+      timerBar.style.width = '100%';
+
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        if (timeLeft <= 5) {
+          timerBadge.classList.add('warning');
+          soundTick();
+        }
+
+        timerVal.textContent = Math.max(0, timeLeft);
+        const pct = (timeLeft / 20) * 100;
+        timerBar.style.width = Math.max(0, pct) + '%';
+
+        if (timeLeft <= 0) {
+          clearInterval(timerInterval);
+          if (!hasAnsweredCurrent) {
+            handleStudentTimeout();
+          }
+        }
+      }, 1000);
+    }
+
+    function updateStudentQuestionDisplay() {
+      const q = questionsData[currentQuestionIndex];
+      if (!q) return;
+
+      const qBadge = document.getElementById('studentQuestionBadge');
+      if (qBadge) {
+        qBadge.textContent = translations[currentLang].questionProgressFormat
+          .replace('{current}', currentQuestionIndex + 1)
+          .replace('{total}', questionsData.length);
+      }
+
+      const scoreBadge = document.getElementById('studentScoreBadge');
+      if (scoreBadge) {
+        scoreBadge.textContent = translations[currentLang].scoreFormat.replace('{score}', myScore);
+      }
+
+      const flagContainer = document.getElementById('studentFlagContainer');
+      if (flagContainer && q.svg) {
+        flagContainer.innerHTML = q.svg;
+      }
+
+      for (let i = 0; i < 4; i++) {
+        const ansEl = document.getElementById('studentAns' + i);
+        if (ansEl && q.options[i]) {
+          ansEl.textContent = q.options[i][currentLang];
+        }
+      }
+    }
+
+    function studentChooseAnswer(choiceIndex) {
+      if (hasAnsweredCurrent) return;
+      hasAnsweredCurrent = true;
+
+      if (timerInterval) clearInterval(timerInterval);
+
+      const q = questionsData[currentQuestionIndex];
+      const isCorrect = (choiceIndex === q.correctIndex);
+
+      // Score calculation: Faster answer = more points (base 500 + up to 500 for speed)
+      let pointsEarned = 0;
+      if (isCorrect) {
+        const speedBonus = Math.round(500 * (Math.max(1, timeLeft) / 20));
+        pointsEarned = 500 + speedBonus;
+        myScore += pointsEarned;
+        soundCorrect();
+      } else {
+        soundWrong();
+      }
+
+      // Visual feedback on chosen button
+      for (let i = 0; i < 4; i++) {
+        const btn = document.getElementById('studentAnsBtn' + i);
+        btn.disabled = true;
+        if (i === choiceIndex) {
+          btn.classList.add('selected-choice');
+        } else {
+          btn.classList.add('dimmed');
+        }
+      }
+
+      // Transmit answer to teacher
+      sendSyncMessage({
+        type: 'STUDENT_ANSWER_SUBMIT',
+        pin: roomPin,
+        studentId: myStudentId,
+        studentName: myStudentName,
+        questionIndex: currentQuestionIndex,
+        choiceIndex: choiceIndex,
+        isCorrect: isCorrect,
+        points: pointsEarned,
+        timeLeft: timeLeft
+      });
+
+      // Show immediate student feedback screen
+      setTimeout(() => {
+        showStudentFeedback(isCorrect, pointsEarned, false);
+      }, 350);
+    }
+
+    function handleStudentTimeout() {
+      hasAnsweredCurrent = true;
+      soundWrong();
+
+      // Disable all buttons
+      for (let i = 0; i < 4; i++) {
+        const btn = document.getElementById('studentAnsBtn' + i);
+        btn.disabled = true;
+        btn.classList.add('dimmed');
+      }
+
+      sendSyncMessage({
+        type: 'STUDENT_ANSWER_SUBMIT',
+        pin: roomPin,
+        studentId: myStudentId,
+        studentName: myStudentName,
+        questionIndex: currentQuestionIndex,
+        choiceIndex: -1,
+        isCorrect: false,
+        points: 0,
+        timeLeft: 0
+      });
+
+      showStudentFeedback(false, 0, true);
+    }
+
+    function showStudentFeedback(isCorrect, points, isTimeout) {
+      lastStudentFeedbackState = { isCorrect, points, isTimeout };
+      showScreen('screenStudentFeedback');
+
+      const icon = document.getElementById('feedbackIcon');
+      const title = document.getElementById('feedbackTitle');
+      const pts = document.getElementById('feedbackPoints');
+      const rank = document.getElementById('feedbackRank');
+
+      if (isTimeout) {
+        icon.textContent = '⏰';
+        title.textContent = translations[currentLang].timeout;
+        title.style.color = '#ff9800';
+        pts.textContent = translations[currentLang].pointsZero;
+      } else if (isCorrect) {
+        icon.textContent = '🎉';
+        title.textContent = translations[currentLang].correct;
+        title.style.color = '#10b981';
+        pts.textContent = translations[currentLang].pointsEarned.replace('{pts}', points);
+      } else {
+        icon.textContent = '❌';
+        title.textContent = translations[currentLang].wrong;
+        title.style.color = '#ef4444';
+        pts.textContent = translations[currentLang].pointsZero;
+      }
+
+      rank.textContent = translations[currentLang].currentRankFormat.replace('{rank}', myCurrentRank);
+    }
+
+    function handleStudentQuestionEnd(msg) {
+      // Find my position in the leaderboard
+      if (msg.leaderboard) {
+        const me = msg.leaderboard.find((s) => s.id === myStudentId);
+        if (me) {
+          myCurrentRank = me.rank;
+          const rankEl = document.getElementById('feedbackRank');
+          if (rankEl) {
+            rankEl.textContent = translations[currentLang].currentRankFormat.replace('{rank}', myCurrentRank);
+          }
+        }
+      }
+    }
+
+    function handleStudentGameOver(msg) {
+      soundFanfare();
+      startConfetti();
+
+      const rankings = msg.rankings || [];
+      renderPodiumAndLeaderboard(rankings);
+
+      // Show personal result banner
+      const me = rankings.find((s) => s.id === myStudentId);
+      const personalBanner = document.getElementById('studentPersonalResult');
+      const personalText = document.getElementById('studentPersonalResultText');
+
+      if (me && personalBanner && personalText) {
+        personalBanner.style.display = 'block';
+        personalText.textContent = translations[currentLang].yourFinalResult
+          .replace('{rank}', me.rank)
+          .replace('{score}', me.score);
+      }
+
+      showScreen('screenFinal');
+    }
+
+    /* =========================================================
+       10. PODIUM & RESULTS RENDERING (TOP 3 & FULL TOP 5)
+       ========================================================= */
+    function renderPodiumAndLeaderboard(rankings) {
+      lastFinalRankings = rankings;
+      const ptsWord = translations[currentLang]?.ptsUnit || 'pts';
+      const podium = document.getElementById('podiumContainer');
+      const fullList = document.getElementById('finalFullLeaderboard');
+
+      if (!podium || !fullList) return;
+      podium.innerHTML = '';
+      fullList.innerHTML = '';
+
+      const p1 = rankings[0] || null;
+      const p2 = rankings[1] || null;
+      const p3 = rankings[2] || null;
+
+      // 1st Place (Gold)
+      const step1Html = p1 ? `
+        <div class="podium-step step-1">
+          <div class="podium-avatar">👑 ${p1.avatar}</div>
+          <div class="podium-name">${escapeHtml(p1.name)}</div>
+          <div class="podium-score">${p1.score} ${ptsWord}</div>
+          <div class="podium-block">
+            <span class="rank-number">1</span>
+            <span>🥇</span>
+          </div>
+        </div>
+      ` : '';
+
+      // 2nd Place (Silver)
+      const step2Html = p2 ? `
+        <div class="podium-step step-2">
+          <div class="podium-avatar">${p2.avatar}</div>
+          <div class="podium-name">${escapeHtml(p2.name)}</div>
+          <div class="podium-score">${p2.score} ${ptsWord}</div>
+          <div class="podium-block">
+            <span class="rank-number">2</span>
+            <span>🥈</span>
+          </div>
+        </div>
+      ` : '';
+
+      // 3rd Place (Bronze)
+      const step3Html = p3 ? `
+        <div class="podium-step step-3">
+          <div class="podium-avatar">${p3.avatar}</div>
+          <div class="podium-name">${escapeHtml(p3.name)}</div>
+          <div class="podium-score">${p3.score} ${ptsWord}</div>
+          <div class="podium-block">
+            <span class="rank-number">3</span>
+            <span>🥉</span>
+          </div>
+        </div>
+      ` : '';
+
+      podium.innerHTML = step2Html + step1Html + step3Html;
+
+      // Full leaderboard rows
+      rankings.slice(0, 5).forEach((p, idx) => {
+        const row = document.createElement('div');
+        row.className = 'leader-row';
+        row.innerHTML = `
+          <div class="leader-left">
+            <span class="leader-rank rank-${idx + 1}">${idx + 1}</span>
+            <span class="leader-avatar">${p.avatar}</span>
+            <span class="leader-name">${escapeHtml(p.name)}</span>
+          </div>
+          <div class="leader-score">${p.score} ${ptsWord}</div>
+        `;
+        fullList.appendChild(row);
+      });
+    }
+
+    /* =========================================================
+       11. PURE JAVASCRIPT CONFETTI ENGINE (NO EXTERNAL LIBS)
+       ========================================================= */
+    let confettiAnimationId = null;
+    let confettiParticles = [];
+
+    function startConfetti() {
+      const canvas = document.getElementById('confetti-canvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+
+      const colors = ['#ffd700', '#ff007f', '#00e5ff', '#10b981', '#ff9100', '#ffffff'];
+      confettiParticles = [];
+
+      for (let i = 0; i < 120; i++) {
+        confettiParticles.push({
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height - canvas.height,
+          w: Math.random() * 12 + 6,
+          h: Math.random() * 8 + 4,
+          color: colors[Math.floor(Math.random() * colors.length)],
+          vx: (Math.random() - 0.5) * 3,
+          vy: Math.random() * 4 + 3,
+          rot: Math.random() * 360,
+          rotSpeed: (Math.random() - 0.5) * 8
+        });
+      }
+
+      function render() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        confettiParticles.forEach((p) => {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.rot += p.rotSpeed;
+
+          if (p.y > canvas.height) {
+            p.y = -20;
+            p.x = Math.random() * canvas.width;
+          }
+
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate((p.rot * Math.PI) / 180);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        });
+
+        confettiAnimationId = requestAnimationFrame(render);
+      }
+
+      if (confettiAnimationId) cancelAnimationFrame(confettiAnimationId);
+      render();
+    }
+
+    function stopConfetti() {
+      if (confettiAnimationId) {
+        cancelAnimationFrame(confettiAnimationId);
+        confettiAnimationId = null;
+      }
+      const canvas = document.getElementById('confetti-canvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      const canvas = document.getElementById('confetti-canvas');
+      if (canvas) {
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+      }
+    });
+
+    /* =========================================================
+       12. HELPER UTILITIES
+       ========================================================= */
+    function showToast(text) {
+      const toast = document.getElementById('toastMsg');
+      if (!toast) return;
+      toast.textContent = text;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 2500);
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    // Auto-focus room code digits formatting
+    const pinInputEl = document.getElementById('studentPinInput');
+    if (pinInputEl) {
+      pinInputEl.addEventListener('input', (e) => {
+        e.target.value = e.target.value.replace(/\D/g, '').substring(0, 6);
+      });
+    }
+
+    // Initialize application on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      applyLanguage(currentLang);
+      updateSoundButtonUI();
+
+      // Check if URL has ?joinPin=
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.has('joinPin')) {
+        showStudentJoin();
+        const pinInput = document.getElementById('studentPinInput');
+        if (pinInput) {
+          pinInput.value = urlParams.get('joinPin');
+        }
+        setTimeout(() => {
+          const nameInput = document.getElementById('studentNameInput');
+          if (nameInput) nameInput.focus();
+        }, 150);
+      }
+    });
+  </script>
+</body>
+</html>
